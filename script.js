@@ -25,7 +25,23 @@ document.getElementById('generator-form').addEventListener('submit', function(ev
         }
     });
 
-    var iframeContent = '<video controls preload="auto" width="100%" height="100%"><source src="' + videoUrl + '" type="video/mp4"></video>';
-    var iframeCode = '<iframe src="player.html" width="800" height="450" frameborder="0" allowfullscreen></iframe>';
+    var iframeContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Embedded Video</title>
+        </head>
+        <body>
+            <video controls preload="auto" width="100%" height="100%">
+                <source src="${videoUrl}" type="video/mp4">
+            </video>
+        </body>
+        </html>
+    `;
+    var blob = new Blob([iframeContent], { type: 'text/html' });
+    var iframeUrl = URL.createObjectURL(blob);
+    var iframeCode = `<iframe src="${iframeUrl}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
     embedCode.value = iframeCode;
 });
