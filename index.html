@@ -1,90 +1,103 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Generador de Reproductores</title>
-    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
-    <style>
-        .generator-container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 8px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-        }
-        
-        .preview-container {
-            margin-top: 20px;
-            background: white;
-            padding: 15px;
-            border: 1px solid #ddd;
-        }
-        
-        .embed-code {
-            background: #fff;
-            padding: 10px;
-            margin: 10px 0;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-<body>
-    <div class="generator-container">
-        <h2>Generador de Reproductores</h2>
-        
-        <div class="form-group">
-            <label>URL del Video (MP4):</label>
-            <input type="text" id="videoUrl" placeholder="https://tudominio.com/video.mp4">
-        </div>
-        
-        <div class="form-group">
-            <label>VAST Tag (Opcional):</label>
-            <input type="text" id="vastUrl" placeholder="https://tuvast.com/vast.xml">
-        </div>
-        
-        <button onclick="generateEmbed()">Generar Código</button>
-        
-        <div class="preview-container">
-            <h3>Previsualización:</h3>
-            <div id="playerPreview"></div>
-            
-            <h3>Código Embed:</h3>
-            <div class="embed-code" id="embedCode"></div>
-            
-            <h3>Código Iframe:</h3>
-            <div class="embed-code" id="iframeCode"></div>
-        </div>
+<div class='generator-container'>
+    <h2>Generador de Reproductor para Blogger</h2>
+    
+    <div class='form-group'>
+        <label>URL del Video MP4:</label>
+        <input type='text' id='bloggerVideoUrl' placeholder='Ej: https://tuservidor.com/video.mp4' style='width: 100%'/>
     </div>
+    
+    <div class='form-group'>
+        <label>VAST Tag (opcional):</label>
+        <input type='text' id='bloggerVastUrl' placeholder='Ej: https://tuanuncio.com/vast.xml' style='width: 100%'/>
+    </div>
+    
+    <button onclick='generateBloggerCode()'>Generar Código</button>
+    
+    <div id='bloggerOutput' style='margin-top: 20px; display: none;'>
+        <h3>Código para pegar en Blogger:</h3>
+        <textarea id='bloggerEmbedCode' style='width: 100%; height: 100px;'></textarea>
+    </div>
+</div>
 
-    <script>
-        function generateEmbed() {
-            // Obtener valores
-            const videoUrl = encodeURIComponent(document.getElementById('videoUrl').value);
-            const vastUrl = encodeURIComponent(document.getElementById('vastUrl').value || 'https://default.vast.tag/vast.xml');
-            
-            // Generar URLs
-            const playerUrl = `player.html?video=${videoUrl}&vast=${vastUrl}`;
-            
-            // Generar códigos
-            const embedCode = `<embed src="${playerUrl}" width="800" height="450" type="text/html">`;
-            const iframeCode = `<iframe src="${playerUrl}" width="800" height="450" allowfullscreen></iframe>`;
-            
-            // Mostrar códigos
-            document.getElementById('embedCode').textContent = embedCode;
-            document.getElementById('iframeCode').textContent = iframeCode;
-            
-            // Actualizar previsualización
-            document.getElementById('playerPreview').innerHTML = iframeCode;
-        }
-    </script>
-</body>
-</html>
+<div id='videoPlayer' style='display: none; margin: 20px 0;'>
+    <video id='fluidPlayerBlogger'>
+        <source src='' type='video/mp4'/>
+    </video>
+</div>
+
+<link href='https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css' rel='stylesheet'/>
+<script src='https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js'></script>
+
+<script>
+// Función para generar el código
+function generateBloggerCode() {
+    const videoUrl = encodeURIComponent(document.getElementById('bloggerVideoUrl').value);
+    const vastUrl = encodeURIComponent(document.getElementById('bloggerVastUrl').value || 'default_vast_url');
+    
+    const embedCode = `<iframe src="${window.location.href}?video=${videoUrl}&vast=${vastUrl}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
+    
+    document.getElementById('bloggerEmbedCode').value = embedCode;
+    document.getElementById('bloggerOutput').style.display = 'block';
+}
+
+// Función para cargar el reproductor
+function loadPlayer() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if(urlParams.has('video')) {
+        document.querySelector('.generator-container').style.display = 'none';
+        document.getElementById('videoPlayer').style.display = 'block';
+        
+        fluidPlayer('fluidPlayerBlogger', {
+            layoutControls: {
+                primaryColor: '#ff5722',
+                posterImage: ''
+            },
+            vastOptions: {
+                adList: [{
+                    roll: 'preRoll',
+                    vastTag: urlParams.get('vast'),
+                    adText: 'Anuncio | Saltar en {remaining} segundos',
+                    skipButtonCaption: 'Saltar en [seconds]'
+                }]
+            }
+        });
+        
+        const player = document.getElementById('fluidPlayerBlogger');
+        player.src = decodeURIComponent(urlParams.get('video'));
+    }
+}
+
+// Inicialización automática
+window.onload = function() {
+    loadPlayer();
+};
+</script>
+
+<style>
+.generator-container {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+button {
+    background: #4285f4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #357abd;
+}
+</style>
