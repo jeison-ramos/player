@@ -1,88 +1,89 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Embeds Fluid Player</title>
-    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
+    <title>Generador de Reproductores</title>
+    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        .generator-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
+        
+        .form-group {
+            margin-bottom: 15px;
         }
-        input, textarea {
+        
+        input[type="text"] {
             width: 100%;
-            margin-bottom: 10px;
             padding: 8px;
+            margin: 5px 0;
         }
-        button {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .result {
+        
+        .preview-container {
             margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+        
+        .embed-code {
+            background: #fff;
+            padding: 10px;
+            margin: 10px 0;
+            word-wrap: break-word;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Generador de Embeds Fluid Player</h1>
-        <p>Introduce la URL del video y la URL del anuncio VAST para generar el embed.</p>
-        <label for="videoUrl">URL del Video:</label>
-        <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4">
+    <div class="generator-container">
+        <h2>Generador de Reproductores</h2>
         
-        <label for="vastUrl">URL del Anuncio VAST:</label>
-        <input type="text" id="vastUrl" placeholder="https://example.com/vast.xml">
+        <div class="form-group">
+            <label>URL del Video (MP4):</label>
+            <input type="text" id="videoUrl" placeholder="https://tudominio.com/video.mp4">
+        </div>
         
-        <button onclick="generateEmbed()">Generar Embed</button>
+        <div class="form-group">
+            <label>VAST Tag (Opcional):</label>
+            <input type="text" id="vastUrl" placeholder="https://tuvast.com/vast.xml">
+        </div>
         
-        <div class="result" id="result"></div>
+        <button onclick="generateEmbed()">Generar Código</button>
+        
+        <div class="preview-container">
+            <h3>Previsualización:</h3>
+            <div id="playerPreview"></div>
+            
+            <h3>Código Embed:</h3>
+            <div class="embed-code" id="embedCode"></div>
+            
+            <h3>Código Iframe:</h3>
+            <div class="embed-code" id="iframeCode"></div>
+        </div>
     </div>
 
     <script>
         function generateEmbed() {
-            const videoUrl = document.getElementById('videoUrl').value;
-            const vastUrl = document.getElementById('vastUrl').value;
-
-            if (!videoUrl || !vastUrl) {
-                alert('Por favor, introduce ambas URLs.');
-                return;
-            }
-
-            const embedCode = `
-            <iframe width="560" height="315" srcdoc="
-            <video id='video-id' width='100%' height='100%' controls>
-                <source src='${videoUrl}' type='video/mp4'>
-            </video>
-            <script src='https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js'></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    var player = fluidPlayer('video-id', {
-                        vastOptions: {
-                            adList: [{
-                                roll: 'preRoll',
-                                vastTag: '${vastUrl}'
-                            }]
-                        }
-                    });
-                });
-            </script>
-            " frameborder="0" allowfullscreen></iframe>`;
-
-            document.getElementById('result').innerHTML = `
-                <h2>Código Embed:</h2>
-                <textarea rows="10" readonly>${embedCode}</textarea>
-            `;
+            // Obtener valores
+            const videoUrl = encodeURIComponent(document.getElementById('videoUrl').value);
+            const vastUrl = encodeURIComponent(document.getElementById('vastUrl').value || 'https://default.vast.tag/vast.xml');
+            
+            // Generar URLs
+            const playerUrl = `player.html?video=${videoUrl}&vast=${vastUrl}`;
+            
+            // Generar códigos
+            const embedCode = `<embed src="${playerUrl}" width="800" height="450" type="text/html">`;
+            const iframeCode = `<iframe src="${playerUrl}" width="800" height="450" allowfullscreen></iframe>`;
+            
+            // Mostrar códigos
+            document.getElementById('embedCode').textContent = embedCode;
+            document.getElementById('iframeCode').textContent = iframeCode;
+            
+            // Actualizar previsualización
+            document.getElementById('playerPreview').innerHTML = iframeCode;
         }
     </script>
 </body>
