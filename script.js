@@ -25,7 +25,8 @@ document.getElementById('generator-form').addEventListener('submit', function(ev
         }
     });
 
-    var iframeContent = `
+    // Reemplaza VIDEO_URL y VAST_URL en player.html
+    var playerHtmlContent = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -60,8 +61,11 @@ document.getElementById('generator-form').addEventListener('submit', function(ev
         </body>
         </html>
     `;
-    var blob = new Blob([iframeContent], { type: 'text/html' });
-    var iframeUrl = URL.createObjectURL(blob);
-    var iframeCode = `<iframe src="${iframeUrl}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+
+    // Crear un blob con el contenido HTML
+    var blob = new Blob([playerHtmlContent], { type: 'text/html' });
+    var playerUrl = URL.createObjectURL(blob);
+
+    var iframeCode = `<iframe src="${playerUrl}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
     embedCode.value = iframeCode;
 });
