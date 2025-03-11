@@ -1,90 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Generador de Reproductores</title>
-    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Player Generator</title>
+    <link href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css" rel="stylesheet">
     <style>
-        .generator-container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 8px;
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        input[type="text"] {
+        #player-container {
             width: 100%;
-            padding: 8px;
-            margin: 5px 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        
-        .preview-container {
-            margin-top: 20px;
-            background: white;
-            padding: 15px;
-            border: 1px solid #ddd;
-        }
-        
-        .embed-code {
-            background: #fff;
-            padding: 10px;
-            margin: 10px 0;
-            word-wrap: break-word;
+        #player {
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body>
-    <div class="generator-container">
-        <h2>Generador de Reproductores</h2>
-        
-        <div class="form-group">
-            <label>URL del Video (MP4):</label>
-            <input type="text" id="videoUrl" placeholder="https://tudominio.com/video.mp4">
-        </div>
-        
-        <div class="form-group">
-            <label>VAST Tag (Opcional):</label>
-            <input type="text" id="vastUrl" placeholder="https://tuvast.com/vast.xml">
-        </div>
-        
-        <button onclick="generateEmbed()">Generar Código</button>
-        
-        <div class="preview-container">
-            <h3>Previsualización:</h3>
-            <div id="playerPreview"></div>
-            
-            <h3>Código Embed:</h3>
-            <div class="embed-code" id="embedCode"></div>
-            
-            <h3>Código Iframe:</h3>
-            <div class="embed-code" id="iframeCode"></div>
-        </div>
-    </div>
+    <h1>Fluid Player Generator</h1>
+    <form id="generator-form">
+        <label for="video-url">Video URL:</label><br>
+        <input type="text" id="video-url" name="video-url" required><br><br>
 
+        <label for="vast-url">VAST Ad URL:</label><br>
+        <input type="text" id="vast-url" name="vast-url"><br><br>
+
+        <button type="submit">Generate Player</button>
+    </form>
+
+    <h2>Generated Player</h2>
+    <div id="player-container"></div>
+
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <script>
-        function generateEmbed() {
-            // Obtener valores
-            const videoUrl = encodeURIComponent(document.getElementById('videoUrl').value);
-            const vastUrl = encodeURIComponent(document.getElementById('vastUrl').value || 'https://default.vast.tag/vast.xml');
-            
-            // Generar URLs
-            const playerUrl = `player.html?video=${videoUrl}&vast=${vastUrl}`;
-            
-            // Generar códigos
-            const embedCode = `<embed src="${playerUrl}" width="800" height="450" type="text/html">`;
-            const iframeCode = `<iframe src="${playerUrl}" width="800" height="450" allowfullscreen></iframe>`;
-            
-            // Mostrar códigos
-            document.getElementById('embedCode').textContent = embedCode;
-            document.getElementById('iframeCode').textContent = iframeCode;
-            
-            // Actualizar previsualización
-            document.getElementById('playerPreview').innerHTML = iframeCode;
-        }
+        document.getElementById('generator-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var videoUrl = document.getElementById('video-url').value;
+            var vastUrl = document.getElementById('vast-url').value;
+            var playerContainer = document.getElementById('player-container');
+
+            playerContainer.innerHTML = '<video id="player" controls preload="auto"><source src="' + videoUrl + '" type="video/mp4"></video>';
+
+            var player = fluidPlayer('player', {
+                layoutControls: {
+                    fillToContainer: true
+                },
+                vastOptions: {
+                    adList: [
+                        {
+                            roll: 'preRoll',
+                            vastTag: vastUrl
+                        }
+                    ]
+                }
+            });
+        });
     </script>
 </body>
 </html>
