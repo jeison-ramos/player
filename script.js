@@ -32,11 +32,31 @@ document.getElementById('generator-form').addEventListener('submit', function(ev
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Embedded Video</title>
+            <link href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css" rel="stylesheet">
         </head>
         <body>
-            <video controls preload="auto" width="100%" height="100%">
+            <video id="player" controls preload="auto" width="100%" height="100%">
                 <source src="${videoUrl}" type="video/mp4">
             </video>
+            <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
+            <script>
+                fluidPlayer('player', {
+                    layoutControls: {
+                        fillToContainer: true
+                    },
+                    vastOptions: {
+                        adList: [
+                            {
+                                roll: 'preRoll',
+                                vastTag: '${vastUrl}',
+                                adText: 'Publicidad',
+                                skip: true,
+                                skipIn: 10
+                            }
+                        ]
+                    }
+                });
+            </script>
         </body>
         </html>
     `;
