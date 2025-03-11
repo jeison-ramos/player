@@ -26,6 +26,6 @@ document.getElementById('generator-form').addEventListener('submit', function(ev
     });
 
     var iframeContent = '<video controls preload="auto" width="100%" height="100%"><source src="' + videoUrl + '" type="video/mp4"></video>';
-    var iframeCode = '<iframe src="data:text/html;charset=utf-8,' + encodeURIComponent(iframeContent) + '" width="800" height="450" frameborder="0" allowfullscreen></iframe>';
+    var iframeCode = '<iframe src="player.html" width="800" height="450" frameborder="0" allowfullscreen></iframe>';
     embedCode.value = iframeCode;
 });
