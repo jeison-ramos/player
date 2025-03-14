@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Fluid Player</title>
+    <title>Reproductor Fluid Player con Anuncios VAST</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Incluye Fluid Player -->
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
@@ -20,6 +20,7 @@
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
+        const vastAdTagUrl = params.get('vast') || 'https://fake-square.com/dGmeFzz.dmGRN/vWZhGNU_/ceDmR9ZuoZ/UdlJktPOTLYLw/NcjHIMy/MxDLcjt_NSj/A/2aM_jaIAwOOCAj'; // URL del anuncio VAST
 
         // Configurar el reproductor
         fluidPlayer(
@@ -27,6 +28,19 @@
                 layoutControls: {
                     primaryColor: "#FF6600",
                     posterImage: posterUrl || null, // Evitar errores si no hay portada
+                },
+                vastOptions: {
+                    adList: [
+                        {
+                            roll: "preRoll", // Tipo de anuncio: pre-roll, mid-roll, post-roll
+                            vastTag: vastAdTagUrl || null, // URL del anuncio VAST
+                            adText: "Publicidad", // Texto que se muestra durante el anuncio (opcional)
+                        }
+                    ],
+                    skipButtonCaption: "Saltar en XX segundos", // Texto del botón de saltar
+                    skipButtonClickCaption: "Saltar ahora", // Texto del botón cuando se puede saltar
+                    adCTAText: "Visita nuestro sitio", // Texto del botón CTA (opcional)
+                    adCTAUrl: "https://www.example.com", // URL del botón CTA (opcional)
                 }
             }
         );
