@@ -21,33 +21,12 @@
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
-        // Anuncio VAST incorporado directamente en el código
-        const vastTag = 'https://fake-square.com/d/m.F/zIdZGDN/vlZzGGUA/LeCm/9au_Z-U/lfkLPrTIYAwZNJjVI/yLMEDlcWtMN/jfA/2fMsjBI/wQOQAj'; // URL del anuncio VAST por defecto
-
         // Configurar el reproductor
         fluidPlayer(
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
                     posterImage: posterUrl || null, // Evitar errores si no hay portada
-                },
-                vastOptions: {
-                    adList: [
-                        {
-                            roll: "preRoll", // Tipo de anuncio: pre-roll
-                            vastTag: vastTag,
-                            adText: "Publicidad" // Texto opcional para el anuncio
-                        }
-                    ],
-                    skipButtonCaption: "Saltar anuncio en [seconds] segundos", // Personalizar texto del botón de salto
-                    adCTAText: "Visita nuestro sitio web" // Texto CTA del anuncio
-                },
-                events: {
-                    onPlaylistComplete: function () {
-                        // Asegurarse de que el video continúe reproduciéndose después del anuncio
-                        const videoElement = document.getElementById('video-player');
-                        videoElement.play();
-                    }
                 }
             }
         );
