@@ -9,8 +9,15 @@
 <body>
     <h1>Generador de Iframe para Fluid Player</h1>
     <form id="iframe-generator">
-        <label for="video-url">URL del Video:</label>
-        <input type="text" id="video-url" placeholder="https://example.com/video.mp4" required>
+        <label for="service">Servicio:</label>
+        <select id="service">
+            <option value="direct">Directo (URL completa)</option>
+            <option value="pixeldrain">Pixeldrain (ID del archivo)</option>
+            <option value="googledrive">Google Drive (ID del archivo)</option>
+        </select>
+
+        <label for="video-id">ID/URL del Video:</label>
+        <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o 1X2Y3Z4A5B6C7D8E9F0G (Google Drive)" required>
 
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
@@ -31,17 +38,29 @@
         }
 
         function generateIframe() {
-            const videoUrl = document.getElementById('video-url').value.trim();
+            const service = document.getElementById('service').value;
+            const videoId = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
 
+            let videoUrl;
+
+            // Generar URL según el servicio seleccionado
+            if (service === "direct") {
+                videoUrl = videoId; // URL completa directa
+            } else if (service === "pixeldrain") {
+                videoUrl = `https://pixeldrain.com/api/file/${videoId}`;
+            } else if (service === "googledrive") {
+                videoUrl = `https://drive.google.com/uc?id=${videoId}&export=download`;
+            }
+
             // Validar campos obligatorios
-            if (!videoUrl) {
-                alert("Por favor, completa todos los campos obligatorios.");
+            if (!videoId) {
+                alert("Por favor, ingresa el ID o URL del video.");
                 return;
             }
 
             // Validar formato de URLs
-            if (!isValidUrl(videoUrl) || (posterUrl && !isValidUrl(posterUrl))) {
+            if ((service === "direct" && !isValidUrl(videoUrl)) || (posterUrl && !isValidUrl(posterUrl))) {
                 alert("Por favor, ingresa URLs válidas.");
                 return;
             }
