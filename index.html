@@ -15,28 +15,39 @@
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
-        <label for="vast-tag">URL del Anuncio VAST:</label>
-        <input type="text" id="vast-tag" placeholder="https://example.com/vast.xml" required>
-
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
 
     <div class="iframe-preview" id="iframe-preview"></div>
 
     <script>
-        function generateIframe() {
-            const videoUrl = document.getElementById('video-url').value;
-            const posterUrl = document.getElementById('poster-url').value;
-            const vastTag = document.getElementById('vast-tag').value;
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
 
-            // Validar campos
-            if (!videoUrl || !vastTag) {
+        function generateIframe() {
+            const videoUrl = document.getElementById('video-url').value.trim();
+            const posterUrl = document.getElementById('poster-url').value.trim();
+
+            // Validar campos obligatorios
+            if (!videoUrl) {
                 alert("Por favor, completa todos los campos obligatorios.");
                 return;
             }
 
+            // Validar formato de URLs
+            if (!isValidUrl(videoUrl) || (posterUrl && !isValidUrl(posterUrl))) {
+                alert("Por favor, ingresa URLs válidas.");
+                return;
+            }
+
             // Generar URL del iframe
-            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?video=${encodeURIComponent(videoUrl)}&poster=${encodeURIComponent(posterUrl)}&vast=${encodeURIComponent(vastTag)}`;
+            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?video=${encodeURIComponent(videoUrl)}&poster=${encodeURIComponent(posterUrl)}`;
 
             // Mostrar el iframe generado
             const iframePreview = document.getElementById('iframe-preview');
