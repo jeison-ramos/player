@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reproductor Fluid Player</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Incluye Fluid Player -->
@@ -30,6 +30,11 @@
             width: 100%;
             height: 100%;
             object-fit: cover; /* Ajusta el video al contenedor sin deformarlo */
+            /* Fallback para navegadores que no soportan object-fit */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -55,7 +60,11 @@
                     fillToContainer: true, // Hace que el reproductor llene el contenedor
                     autoPlay: false, // Desactiva la reproducción automática
                     allowTheatre: true, // Permite modo teatro
-                    allowFullScreen: true // Permite pantalla completa
+                    allowFullScreen: true, // Permite pantalla completa
+                    controlBar: {
+                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
+                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
+                    }
                 }
             }
         );
@@ -66,7 +75,12 @@
 
         // Manejar errores de carga
         videoElement.onerror = () => {
-            alert("Error al cargar el video. Por favor, verifica la URL.");
+            const container = document.getElementById('video-container');
+            container.innerHTML = `
+                <div style="color: white; text-align: center; font-size: 1.5em;">
+                    Error al cargar el video. Por favor, verifica la URL.
+                </div>
+            `;
         };
     </script>
 </body>
