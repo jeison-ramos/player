@@ -1,8 +1,10 @@
+/* Estilos globales */
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
 }
 
+/* Estilos para inputs y textarea */
 input, textarea {
     width: 100%;
     padding: 10px;
@@ -10,6 +12,7 @@ input, textarea {
     box-sizing: border-box;
 }
 
+/* Estilos para botones */
 button {
     padding: 10px 20px;
     background-color: #FF6600;
@@ -22,6 +25,7 @@ button:hover {
     background-color: #E65C00;
 }
 
+/* Estilos para la vista previa del iframe */
 .iframe-preview {
     margin-top: 20px;
     border: 1px solid #ccc;
