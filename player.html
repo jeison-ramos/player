@@ -3,107 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor con Anuncios VAST</title>
+    <title>Reproductor Fluid Player</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Incluye Fluid Player -->
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
+        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background: #000;
+            overflow: hidden; /* Evita scrollbars innecesarios */
         }
+
         #video-container {
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
         }
+
         #video-player {
             max-width: 100%;
             max-height: 100%;
-            object-fit: contain;
-            aspect-ratio: 16/9;
+            width: auto;
+            height: auto;
+            object-fit: contain; /* Mantiene la relación de aspecto y evita recortes */
+            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
+        }
+
+        /* Estilos específicos para dispositivos móviles en modo vertical */
+        @media screen and (max-aspect-ratio: 1/1) {
+            #video-player {
+                width: 100%;
+                height: auto;
+                object-fit: contain; /* Asegura que el video se ajuste sin recortes */
+            }
         }
     </style>
 </head>
 <body>
     <div id="video-container">
         <video id="video-player" controls>
-            <source src="" type="video/mp4">
+            Tu navegador no soporta el elemento de video.
         </video>
     </div>
 
     <script>
-        // Configuración principal
+        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video') || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
-        // TU VAST URL INTEGRADA
-        const YOUR_VAST_URL = 'https://fake-square.com/d.m/FazvdhG/NTv/ZUGEUH/qeXmZ9WuWZ/UolHkDPkTuY/wzNWj_I/yFMfDmcRtgN/jfA_2SMDj_ILwUOdCbZIsZaTWf1HpPdsDm0lxe';
-
-        // Configuración de anuncios
-        const adList = [{
-            roll: 'pre-roll',
-            vastTag: YOUR_VAST_URL,
-            adText: 'Patrocinado por tu Marca' // Personaliza este texto
-        }];
-
-        // Añadir midroll desde parámetros (opcional)
-        const midrollParam = params.get('midroll');
-        if(midrollParam) {
-            const [vastTag, timer] = midrollParam.split(',');
-            adList.push({
-                roll: 'mid-roll',
-                vastTag: vastTag,
-                timer: parseInt(timer, 10)
-            });
-        }
-
-        // Inicializar reproductor
-        fluidPlayer('video-player', {
-            layoutControls: {
-                primaryColor: "#FF6600",
-                posterImage: posterUrl,
-                fillToContainer: true,
-                autoPlay: false,
-                allowTheatre: true,
-                controlBar: {
-                    autoHide: true,
-                    autoHideTimeout: 3
-                }
-            },
-            vastOptions: {
-                adList: adList,
-                adCTAText: 'Ver Publicidad',
-                vpaidMode: 'ENABLED',
-                vastAdvanced: {
-                    googleImaSettings: {
-                        locale: 'es',
-                        disableCustomPlaybackForIOS10Plus: true
+        // Configurar el reproductor
+        fluidPlayer(
+            'video-player', {
+                layoutControls: {
+                    primaryColor: "#FF6600",
+                    posterImage: posterUrl || null, // Evitar errores si no hay portada
+                    fillToContainer: true, // Hace que el reproductor llene el contenedor
+                    autoPlay: false, // Desactiva la reproducción automática
+                    allowTheatre: true, // Permite modo teatro
+                    allowFullScreen: true, // Permite pantalla completa
+                    controlBar: {
+                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
+                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
                     }
-                },
-                maxAllowedVastTagRedirects: 5
+                }
             }
-        });
+        );
 
-        // Cargar video principal
+        // Establecer la fuente del video
         const videoElement = document.getElementById('video-player');
         videoElement.src = videoUrl;
 
-        // Manejo de errores
-        videoElement.addEventListener('error', () => {
-            document.getElementById('video-container').innerHTML = `
-                <div style="color: white; padding: 20px; text-align: center;">
-                    <h2>Error de carga</h2>
-                    <p>El video no puede ser reproducido</p>
-                    ${videoUrl ? `<p>URL intentada: ${videoUrl}</p>` : ''}
+        // Manejar errores de carga
+        videoElement.onerror = () => {
+            const container = document.getElementById('video-container');
+            container.innerHTML = `
+                <div style="color: white; text-align: center; font-size: 1.5em;">
+                    Error al cargar el video. Por favor, verifica la URL.
                 </div>
             `;
-        });
+        };
     </script>
 </body>
 </html>
