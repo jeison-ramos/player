@@ -58,8 +58,8 @@
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
-        // Configurar el reproductor con anuncios VAST
-        const player = fluidPlayer(
+        // Configurar el reproductor
+        fluidPlayer(
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
@@ -72,50 +72,23 @@
                         autoHide: true, // Oculta automáticamente los controles cuando no se usan
                         autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
                     }
-                },
-                vastOptions: {
-                    adList: [
-                        {
-                            roll: "preRoll",
-                            vastTag: "https://fake-square.com/damTF.ztdSGpNYvoZxG/Uc/keimo9TuuZBUPlRkUPVTNYrwrN/jyIFySMoD-cStNNzjaA/2aMKj/IjwOOMAV",
-                            adText: "Anuncio",
-                            adCTAText: "Saber más",
-                            adCTATextPosition: "top right"
-                        }
-                    ],
-                    adCTAText: "Saber más",
-                    adCTATextPosition: "top right"
                 }
             }
         );
 
-        player.on('playback-start', () => {
-            console.log('El video ha comenzado a reproducirse');
-        });
+        // Establecer la fuente del video
+        const videoElement = document.getElementById('video-player');
+        videoElement.src = videoUrl;
 
-        player.on('ad-ended', () => {
-            console.log('El anuncio ha terminado, cargando el video principal');
-            const videoElement = document.getElementById('video-player');
-            videoElement.src = videoUrl;
-            videoElement.load();
-            videoElement.play().catch(error => {
-                console.error('Error al intentar reproducir el video:', error);
-            });
-        });
-
-        player.on('error', (error) => {
-            console.error('Error en el reproductor:', error);
+        // Manejar errores de carga
+        videoElement.onerror = () => {
             const container = document.getElementById('video-container');
             container.innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
                     Error al cargar el video. Por favor, verifica la URL.
                 </div>
             `;
-        });
-
-        // Establecer la fuente del video
-        const videoElement = document.getElementById('video-player');
-        videoElement.src = videoUrl;
+        };
     </script>
 </body>
 </html>
