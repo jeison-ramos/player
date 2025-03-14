@@ -14,7 +14,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita scrollbars innecesarios */
+            overflow: hidden;
         }
 
         #video-container {
@@ -23,7 +23,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
+            background-color: #000;
         }
 
         #video-player {
@@ -31,16 +31,14 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain; /* Mantiene la relación de aspecto y evita recortes */
-            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
+            object-fit: contain;
+            aspect-ratio: 16 / 9;
         }
 
-        /* Estilos específicos para dispositivos móviles en modo vertical */
         @media screen and (max-aspect-ratio: 1/1) {
             #video-player {
                 width: 100%;
                 height: auto;
-                object-fit: contain; /* Asegura que el video se ajuste sin recortes */
             }
         }
     </style>
@@ -57,21 +55,59 @@
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
+        
+        // Configurar anuncios VAST
+        const preroll = params.get('preroll');
+        const postroll = params.get('postroll');
+        const midrollParam = params.get('midroll');
+        
+        let adList = [];
+        
+        if (preroll) {
+            adList.push({ 
+                roll: 'pre-roll', 
+                vastTag: preroll 
+            });
+        }
+        
+        if (midrollParam) {
+            const [vastTag, timer] = midrollParam.split(',');
+            const parsedTimer = parseInt(timer, 10);
+            if (!isNaN(parsedTimer)) {
+                adList.push({
+                    roll: 'mid-roll',
+                    vastTag: vastTag,
+                    timer: parsedTimer
+                });
+            }
+        }
+        
+        if (postroll) {
+            adList.push({ 
+                roll: 'post-roll', 
+                vastTag: postroll 
+            });
+        }
 
         // Configurar el reproductor
         fluidPlayer(
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
-                    posterImage: posterUrl || null, // Evitar errores si no hay portada
-                    fillToContainer: true, // Hace que el reproductor llene el contenedor
-                    autoPlay: false, // Desactiva la reproducción automática
-                    allowTheatre: true, // Permite modo teatro
-                    allowFullScreen: true, // Permite pantalla completa
+                    posterImage: posterUrl || null,
+                    fillToContainer: true,
+                    autoPlay: false,
+                    allowTheatre: true,
+                    allowFullScreen: true,
                     controlBar: {
-                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
-                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
+                        autoHide: true,
+                        autoHideTimeout: 3
                     }
+                },
+                vastOptions: {
+                    adList: adList,
+                    adCTAText: 'Publicidad',
+                    adText: 'Anuncio {num} de {total}'
                 }
             }
         );
@@ -85,7 +121,7 @@
             const container = document.getElementById('video-container');
             container.innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error al cargar el video. Por favor, verifica la URL.
+                    Error al cargar el video. Verifica la URL.
                 </div>
             `;
         };
