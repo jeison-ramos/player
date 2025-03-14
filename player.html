@@ -18,8 +18,11 @@
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
+        const videoUrl = params.get('video') || 'https://www.w3schools.com/html/mov_bbb.mp4'; // URL de video por defecto
         const posterUrl = params.get('poster') || '';
+
+        // Anuncio VAST incorporado directamente en el código
+        const vastTag = 'https://pubads.g.doubleclick.net/gampad/ads?iu=/6062/iab_vast_samples/skippable&sz=640x480&ciu_szs=300x250,728x90&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&url=[referrer_url]&description_url=[description_url]&correlator=[timestamp]';
 
         // Configurar el reproductor
         fluidPlayer(
@@ -27,6 +30,24 @@
                 layoutControls: {
                     primaryColor: "#FF6600",
                     posterImage: posterUrl || null, // Evitar errores si no hay portada
+                },
+                vastOptions: {
+                    adList: [
+                        {
+                            roll: "preRoll", // Tipo de anuncio: pre-roll
+                            vastTag: vastTag,
+                            adText: "Publicidad"
+                        }
+                    ],
+                    skipButtonCaption: "Saltar anuncio en [seconds] segundos",
+                    adCTAText: "Visita nuestro sitio web"
+                },
+                events: {
+                    onPlaylistComplete: function () {
+                        // Asegurarse de que el video continúe reproduciéndose después del anuncio
+                        const videoElement = document.getElementById('video-player');
+                        videoElement.play();
+                    }
                 }
             }
         );
