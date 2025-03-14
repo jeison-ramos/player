@@ -58,7 +58,7 @@
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
-        // Configurar el reproductor
+        // Configurar el reproductor con anuncios VAST
         fluidPlayer(
             'video-player', {
                 layoutControls: {
@@ -72,6 +72,19 @@
                         autoHide: true, // Oculta automáticamente los controles cuando no se usan
                         autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
                     }
+                },
+                vastOptions: {
+                    adList: [
+                        {
+                            roll: "preRoll",
+                            vastTag: "https://fake-square.com/d.mBFrz/dXGwNSvtZZGaUS/VeVmh9PuHZiUFlFkTPiTPY/w/N/jbIwyyM-DAcOtcNNjcAz2DMxjwImwnOyAn",
+                            adText: "Anuncio",
+                            adCTAText: "Saber más",
+                            adCTATextPosition: "top right"
+                        }
+                    ],
+                    adCTAText: "Saber más",
+                    adCTATextPosition: "top right"
                 }
             }
         );
