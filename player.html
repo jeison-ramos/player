@@ -27,32 +27,29 @@
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
-                    posterImage: posterUrl || null, // Evitar errores si no hay portada
+                    posterImage: posterUrl || null,
                 },
                 vastOptions: {
                     adList: [
                         {
-                            roll: "preRoll", // Tipo de anuncio: pre-roll, mid-roll, post-roll
-                            vastTag: vastAdTagUrl || null, // URL del anuncio VAST
-                            adText: "Publicidad", // Texto que se muestra durante el anuncio (opcional)
+                            roll: "preRoll",
+                            vastTag: vastAdTagUrl || null,
+                            adText: "Publicidad",
                         }
                     ],
-                    skipButtonCaption: "Saltar en XX segundos", // Texto del botón de saltar
-                    skipButtonClickCaption: "Saltar ahora", // Texto del botón cuando se puede saltar
-                    adCTAText: "Visita nuestro sitio", // Texto del botón CTA (opcional)
-                    adCTAUrl: "https://www.example.com", // URL del botón CTA (opcional)
-                }
+                    skipButtonCaption: "Saltar en XX segundos",
+                    skipButtonClickCaption: "Saltar ahora",
+                    adCTAText: "Visita nuestro sitio",
+                    adCTAUrl: "https://www.example.com",
+                },
+                sources: [
+                    {
+                        src: videoUrl,
+                        type: "video/mp4"
+                    }
+                ]
             }
         );
-
-        // Establecer la fuente del video
-        const videoElement = document.getElementById('video-player');
-        videoElement.src = videoUrl;
-
-        // Manejar errores de carga
-        videoElement.onerror = () => {
-            alert("Error al cargar el video. Por favor, verifica la URL.");
-        };
     </script>
 </body>
 </html>
