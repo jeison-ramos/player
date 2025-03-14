@@ -13,11 +13,11 @@
         <select id="service">
             <option value="direct">Directo (URL completa)</option>
             <option value="pixeldrain">Pixeldrain (ID del archivo)</option>
-            <option value="googledrive">Google Drive (ID del archivo)</option>
+            <option value="googledrive">Google Drive (ID o enlace público)</option>
         </select>
 
         <label for="video-id">ID/URL del Video:</label>
-        <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o 1X2Y3Z4A5B6C7D8E9F0G (Google Drive)" required>
+        <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o https://drive.google.com/file/d/FILE_ID/view (Google Drive)" required>
 
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
@@ -28,6 +28,8 @@
     <div class="iframe-preview" id="iframe-preview"></div>
 
     <script>
+        const gDriveApikey = "AIzaSyAIpSmdpo48g_EK9kQdcuDKEYJtyqNEGAU"; // Reemplaza con tu clave de API
+
         function isValidUrl(url) {
             try {
                 new URL(url);
@@ -37,25 +39,57 @@
             }
         }
 
-        function generateIframe() {
+        function extractGoogleDriveId(url) {
+            // Extraer el ID del archivo desde un enlace público de Google Drive
+            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        }
+
+        async function getGoogleDriveFileUrl(fileId) {
+            // Usar la API de Google Drive para obtener la URL directa del archivo
+            const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${gDriveApikey}`;
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error("Error al acceder al archivo. Asegúrate de que el archivo sea público.");
+                }
+                return apiUrl; // Devuelve la URL directa
+            } catch (error) {
+                alert(error.message);
+                return null;
+            }
+        }
+
+        async function generateIframe() {
             const service = document.getElementById('service').value;
-            const videoId = document.getElementById('video-id').value.trim();
+            const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
 
             let videoUrl;
 
             // Generar URL según el servicio seleccionado
             if (service === "direct") {
-                videoUrl = videoId; // URL completa directa
+                videoUrl = videoInput; // URL completa directa
             } else if (service === "pixeldrain") {
-                videoUrl = `https://pixeldrain.com/api/file/${videoId}`;
+                videoUrl = `https://pixeldrain.com/api/file/${videoInput}`;
             } else if (service === "googledrive") {
-                videoUrl = `https://drive.google.com/uc?id=${videoId}&export=download`;
+                if (videoInput.startsWith("https://drive.google.com")) {
+                    // Extraer el ID del enlace público
+                    const fileId = extractGoogleDriveId(videoInput);
+                    if (!fileId) {
+                        alert("Enlace de Google Drive no válido.");
+                        return;
+                    }
+                    videoUrl = await getGoogleDriveFileUrl(fileId); // Usar la API de Google Drive
+                } else {
+                    // Asumimos que se ingresó solo el ID
+                    videoUrl = await getGoogleDriveFileUrl(videoInput);
+                }
             }
 
             // Validar campos obligatorios
-            if (!videoId) {
-                alert("Por favor, ingresa el ID o URL del video.");
+            if (!videoInput || !videoUrl) {
+                alert("Por favor, ingresa un ID/URL válido.");
                 return;
             }
 
