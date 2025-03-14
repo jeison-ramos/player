@@ -20,22 +20,13 @@
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
-        const vastTag = params.get('vast') || '';
 
         // Configurar el reproductor
         fluidPlayer(
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
-                    posterImage: posterUrl,
-                },
-                vastOptions: {
-                    adList: [
-                        {
-                            roll: "preRoll", // Tipo de anuncio: pre-roll
-                            vastTag: vastTag
-                        }
-                    ]
+                    posterImage: posterUrl || null, // Evitar errores si no hay portada
                 }
             }
         );
@@ -43,6 +34,11 @@
         // Establecer la fuente del video
         const videoElement = document.getElementById('video-player');
         videoElement.src = videoUrl;
+
+        // Manejar errores de carga
+        videoElement.onerror = () => {
+            alert("Error al cargar el video. Por favor, verifica la URL.");
+        };
     </script>
 </body>
 </html>
