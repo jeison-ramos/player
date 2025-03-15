@@ -23,6 +23,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            background-color: #000;
         }
 
         #video-player {
@@ -35,12 +36,11 @@
         }
 
         #ad-gif {
-            max-width: 100%;
-            max-height: 100%;
+            max-width: 80%; /* El GIF no ocupará más del 80% del ancho del contenedor */
+            max-height: 80%; /* El GIF no ocupará más del 80% del alto del contenedor */
             width: auto;
             height: auto;
             object-fit: contain;
-            aspect-ratio: 16 / 9;
         }
 
         #skip-button {
