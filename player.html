@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor Fluid Player con Anuncio MidRoll</title>
+    <title>Reproductor Fluid Player con MidRoll</title>
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
         body, html {
@@ -41,12 +41,10 @@
     </div>
 
     <script>
-        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
+        const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
 
-        // Configurar el reproductor con anuncio midRoll
         fluidPlayer(
             'video-player', {
                 layoutControls: {
@@ -64,19 +62,20 @@
                 vastOptions: {
                     adList: [
                         {
-                            roll: "midRoll", // Muestra el anuncio durante la reproducción
-                            timer: 60, // Tiempo en segundos para mostrar el anuncio
-                            vastTag: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=", // URL del archivo VAST
-                            skipButtonCaption: "Saltar anuncio en [seconds] segundos",
-                            adText: "Publicidad",
-                            adCTAText: "Visita nuestro sitio web",
-                            vastTimeout: 5000, // Tiempo máximo de espera para cargar el anuncio
+                            roll: "midRoll",
+                            timer: 60, // Anuncio a los 60 segundos
+                            vastTag: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+                            vastTimeout: 5000,
                         }
                     ],
                     onAdEnd: function() {
-                        console.log("El anuncio ha terminado. Continuando con el video...");
+                        console.log("Anuncio finalizado. Continuando con el video...");
                         const videoElement = document.getElementById('video-player');
-                        videoElement.play(); // Forza la reproducción del video después del anuncio
+                        if (videoElement) {
+                            videoElement.play(); // Forza la reproducción del video
+                        } else {
+                            console.error("No se encontró el elemento de video.");
+                        }
                     },
                     onError: function(error) {
                         console.error("Error al cargar el anuncio VAST:", error);
@@ -85,11 +84,9 @@
             }
         );
 
-        // Establecer la fuente del video
         const videoElement = document.getElementById('video-player');
         videoElement.src = videoUrl;
 
-        // Manejar errores de carga del video
         videoElement.onerror = () => {
             const container = document.getElementById('video-container');
             container.innerHTML = `
@@ -98,6 +95,19 @@
                 </div>
             `;
         };
+
+        // Monitorear eventos del video
+        videoElement.addEventListener('ended', () => {
+            console.log("El video principal ha terminado.");
+        });
+
+        videoElement.addEventListener('pause', () => {
+            console.log("El video se ha pausado.");
+        });
+
+        videoElement.addEventListener('play', () => {
+            console.log("El video se está reproduciendo.");
+        });
     </script>
 </body>
 </html>
