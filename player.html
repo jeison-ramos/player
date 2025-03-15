@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor con Anuncio Personalizado</title>
+    <title>Reproductor con Anuncio Personalizado (GIF)</title>
     <style>
         body, html {
             margin: 0;
@@ -23,7 +23,16 @@
             align-items: center;
         }
 
-        #video-player, #ad-video {
+        #video-player {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            aspect-ratio: 16 / 9;
+        }
+
+        #ad-gif {
             max-width: 100%;
             max-height: 100%;
             width: auto;
@@ -58,10 +67,8 @@
             Tu navegador no soporta el elemento de video.
         </video>
 
-        <!-- Video de anuncio -->
-        <video id="ad-video" controls autoplay muted>
-            Tu navegador no soporta el elemento de video.
-        </video>
+        <!-- GIF de anuncio -->
+        <img id="ad-gif" src="" alt="Anuncio" style="display: block;" />
 
         <!-- Botón de saltar -->
         <button id="skip-button" style="display: none;">Saltar en <span id="skip-timer">10</span>s</button>
@@ -73,13 +80,13 @@
         const mainVideoUrl = params.get('video') || ''; // URL del video principal
         const posterUrl = params.get('poster') || ''; // URL de la imagen de portada
 
-        // URLs del anuncio
-        const adVideoUrl = 'https://www.youtube.com/embed/7flT6J_1P7Y?si=dmsqWqYEHbbnXttC'; // Reemplaza con tu video de anuncio
+        // URL del GIF de anuncio y redirección
+        const adGifUrl = 'https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'; // Reemplaza con tu GIF de anuncio
         const redirectUrl = 'https://www.example.com'; // URL de redirección al hacer clic en "Saltar"
 
         // Elementos del DOM
         const videoPlayer = document.getElementById('video-player');
-        const adVideo = document.getElementById('ad-video');
+        const adGif = document.getElementById('ad-gif');
         const skipButton = document.getElementById('skip-button');
         const skipTimer = document.getElementById('skip-timer');
 
@@ -100,17 +107,14 @@
                 videoPlayer.poster = posterUrl; // Establecer imagen de portada
             }
 
-            // Configurar el video de anuncio
-            adVideo.src = adVideoUrl;
-            adVideo.addEventListener('ended', () => {
-                showMainVideo(); // Si el anuncio termina, muestra el video principal
-            });
+            // Configurar el GIF de anuncio
+            adGif.src = adGifUrl;
 
-            // Mostrar el botón de saltar después de cargar el anuncio
-            adVideo.addEventListener('canplay', () => {
+            // Mostrar el botón de saltar después de cargar el GIF
+            adGif.onload = () => {
                 skipButton.style.display = 'block';
                 startSkipTimer();
-            });
+            };
 
             // Iniciar el contador del botón de saltar
             function startSkipTimer() {
@@ -139,10 +143,9 @@
                 }
             });
 
-            // Mostrar el video principal y ocultar el anuncio
+            // Mostrar el video principal y ocultar el GIF
             function showMainVideo() {
-                adVideo.pause();
-                adVideo.style.display = 'none';
+                adGif.style.display = 'none';
                 videoPlayer.style.display = 'block';
                 videoPlayer.play();
             }
