@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor con Anuncio Personalizado (GIF)</title>
+    <title>Reproductor Fluid Player</title>
+    <link rel="stylesheet" href="styles.css">
     <!-- Incluye Fluid Player -->
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
+        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background-color: #000;
+            overflow: hidden; /* Evita scrollbars innecesarios */
         }
 
         #video-container {
-            position: relative;
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000;
+            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
         }
 
         #video-player {
@@ -31,143 +31,65 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;
-            aspect-ratio: 16 / 9;
+            object-fit: contain; /* Mantiene la relación de aspecto y evita recortes */
+            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
         }
 
-        #ad-gif {
-            max-width: 80%; /* El GIF no ocupará más del 80% del ancho del contenedor */
-            max-height: 80%; /* El GIF no ocupará más del 80% del alto del contenedor */
-            width: auto;
-            height: auto;
-            object-fit: contain;
-        }
-
-        #skip-button {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            z-index: 10;
-        }
-
-        #skip-button:hover {
-            background-color: rgba(255, 0, 0, 0.7);
+        /* Estilos específicos para dispositivos móviles en modo vertical */
+        @media screen and (max-aspect-ratio: 1/1) {
+            #video-player {
+                width: 100%;
+                height: auto;
+                object-fit: contain; /* Asegura que el video se ajuste sin recortes */
+            }
         }
     </style>
 </head>
 <body>
     <div id="video-container">
-        <!-- Video principal -->
-        <video id="video-player" controls style="display: none;">
+        <video id="video-player" controls>
             Tu navegador no soporta el elemento de video.
         </video>
-
-        <!-- GIF de anuncio -->
-        <img id="ad-gif" src="" alt="Anuncio" style="display: block;" />
-
-        <!-- Botón de saltar -->
-        <button id="skip-button" style="display: none;">Saltar en <span id="skip-timer">10</span>s</button>
     </div>
 
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const mainVideoUrl = params.get('video') || ''; // URL del video principal
-        const posterUrl = params.get('poster') || ''; // URL de la imagen de portada
+        const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
+        const posterUrl = params.get('poster') || '';
 
-        // URL del GIF de anuncio y redirección
-        const adGifUrl = 'https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'; // Reemplaza con tu GIF de anuncio
-        const redirectUrl = 'https://www.example.com'; // URL de redirección al hacer clic en "Saltar"
+        // Configurar el reproductor
+        fluidPlayer(
+            'video-player', {
+                layoutControls: {
+                    primaryColor: "#FF6600",
+                    posterImage: posterUrl || null, // Evitar errores si no hay portada
+                    fillToContainer: true, // Hace que el reproductor llene el contenedor
+                    autoPlay: false, // Desactiva la reproducción automática
+                    allowTheatre: true, // Permite modo teatro
+                    allowFullScreen: true, // Permite pantalla completa
+                    controlBar: {
+                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
+                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
+                    }
+                }
+            }
+        );
 
-        // Elementos del DOM
-        const videoPlayer = document.getElementById('video-player');
-        const adGif = document.getElementById('ad-gif');
-        const skipButton = document.getElementById('skip-button');
-        const skipTimer = document.getElementById('skip-timer');
+        // Establecer la fuente del video
+        const videoElement = document.getElementById('video-player');
+        videoElement.src = videoUrl;
 
-        let skipTimerCount = 10; // Tiempo inicial del contador
-        let hasRedirected = false; // Bandera para verificar si ya se redirigió
-
-        // Validar que el video principal esté presente
-        if (!mainVideoUrl) {
-            document.getElementById('video-container').innerHTML = `
+        // Manejar errores de carga
+        videoElement.onerror = () => {
+            const container = document.getElementById('video-container');
+            container.innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error: No se proporcionó una URL válida para el video principal.
+                    Error al cargar el video. Por favor, verifica la URL.
                 </div>
             `;
-        } else {
-            // Configurar el video principal con Fluid Player
-            fluidPlayer(
-                'video-player', {
-                    layoutControls: {
-                        primaryColor: "#FF6600",
-                        posterImage: posterUrl || null,
-                        fillToContainer: true,
-                        autoPlay: false,
-                        allowTheatre: true,
-                        allowFullScreen: true,
-                        controlBar: {
-                            autoHide: true,
-                            autoHideTimeout: 3
-                        }
-                    }
-                }
-            );
-
-            // Establecer la fuente del video principal
-            videoPlayer.src = mainVideoUrl;
-
-            // Configurar el GIF de anuncio
-            adGif.src = adGifUrl;
-
-            // Mostrar el botón de saltar después de cargar el GIF
-            adGif.onload = () => {
-                skipButton.style.display = 'block';
-                startSkipTimer();
-            };
-
-            // Iniciar el contador del botón de saltar
-            function startSkipTimer() {
-                const timerInterval = setInterval(() => {
-                    skipTimerCount--;
-                    skipTimer.textContent = skipTimerCount;
-
-                    if (skipTimerCount <= 0) {
-                        clearInterval(timerInterval);
-                        skipButton.textContent = 'Saltar ahora';
-                        skipButton.disabled = false;
-                    }
-                }, 1000);
-            }
-
-            // Acción al hacer clic en el botón de saltar
-            skipButton.addEventListener('click', () => {
-                if (!hasRedirected) {
-                    // Redirigir a la página externa
-                    window.open(redirectUrl, '_blank');
-                    hasRedirected = true; // Marcar como redirigido
-                    skipButton.textContent = 'Saltar ahora';
-                } else {
-                    // Saltar el anuncio y mostrar el video principal
-                    showMainVideo();
-                }
-            });
-
-            // Mostrar el video principal y ocultar el GIF
-            function showMainVideo() {
-                adGif.style.display = 'none'; // Ocultar el GIF
-                skipButton.style.display = 'none'; // Ocultar el botón de saltar
-                videoPlayer.style.display = 'block'; // Mostrar el video principal
-                videoPlayer.play(); // Reproducir el video principal
-            }
-        }
+        };
     </script>
+    <style> /* Estilos generales */ .overlay-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; } .overlay-gif { max-width: 80%; max-height: 80%; border-radius: 10px; } .skip-button { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; background-color: #ff4d4d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; z-index: 10000; } .skip-button:hover { background-color: #e60000; } body.blocked { overflow: hidden; /* Desactivar el scroll mientras está el overlay */ } </style> <!-- Contenedor del overlay --> <div class='overlay-container' id='overlay'> <img alt='Cargando...' class='overlay-gif' src='https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'/> <button class='skip-button' id='skipButton'>Saltar en <span id='countdown'>10</span> segundos</button> </div> <script type='text/javascript'> // <![CDATA[ // Variables globales const directLink = "https://ptakeemsaifegro.net/4/7391009"; // Reemplaza con tu enlace directo const overlay = document.getElementById("overlay"); const skipButton = document.getElementById("skipButton"); const countdownElement = document.getElementById("countdown"); let countdown = 10; let isCountdownFinished = false; let isFirstClickAfterCountdown = true; // Temporizador de 10 segundos const interval = setInterval(() => { countdown--; countdownElement.textContent = countdown; if (countdown <= 0) { clearInterval(interval); countdownElement.textContent = "Saltar"; isCountdownFinished = true; // Marcar que el contador ha terminado } }, 1000); // Evento de clic en el botón skipButton.addEventListener("click", () => { if (!isCountdownFinished) { // Si el contador no ha terminado, redirigir al direct-link window.open(directLink, "_blank"); } else { if (isFirstClickAfterCountdown) { // Primer clic después del contador: redirigir al direct-link window.open(directLink, "_blank"); isFirstClickAfterCountdown = false; // Marcar que ya se hizo el primer clic } else { // Segundo clic después del contador: quitar el overlay overlay.style.display = "none"; document.body.classList.remove("blocked"); // Habilitar el scroll } } }); // Bloquear el scroll inicialmente document.body.classList.add("blocked"); // ]]> </script>
 </body>
 </html>
