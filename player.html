@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reproductor con Anuncio Personalizado (GIF)</title>
+    <!-- Incluye Fluid Player -->
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -101,11 +103,26 @@
                 </div>
             `;
         } else {
-            // Configurar el video principal
+            // Configurar el video principal con Fluid Player
+            fluidPlayer(
+                'video-player', {
+                    layoutControls: {
+                        primaryColor: "#FF6600",
+                        posterImage: posterUrl || null,
+                        fillToContainer: true,
+                        autoPlay: false,
+                        allowTheatre: true,
+                        allowFullScreen: true,
+                        controlBar: {
+                            autoHide: true,
+                            autoHideTimeout: 3
+                        }
+                    }
+                }
+            );
+
+            // Establecer la fuente del video principal
             videoPlayer.src = mainVideoUrl;
-            if (posterUrl) {
-                videoPlayer.poster = posterUrl; // Establecer imagen de portada
-            }
 
             // Configurar el GIF de anuncio
             adGif.src = adGifUrl;
@@ -145,9 +162,10 @@
 
             // Mostrar el video principal y ocultar el GIF
             function showMainVideo() {
-                adGif.style.display = 'none';
-                videoPlayer.style.display = 'block';
-                videoPlayer.play();
+                adGif.style.display = 'none'; // Ocultar el GIF
+                skipButton.style.display = 'none'; // Ocultar el botón de saltar
+                videoPlayer.style.display = 'block'; // Mostrar el video principal
+                videoPlayer.play(); // Reproducir el video principal
             }
         }
     </script>
