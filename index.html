@@ -22,9 +22,12 @@
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
-        <!-- Campo para múltiples subtítulos -->
-        <label for="subtitles">Subtítulos (uno por línea: "idioma|URL"):</label>
-        <textarea id="subtitles" rows="3" placeholder="ej: es|https://ejemplo.com/es.vtt&#10;en|https://ejemplo.com/en.vtt"></textarea>
+        <!-- Campos para subtítulos -->
+        <div id="subtitles-container">
+            <h3>Subtítulos</h3>
+            <button type="button" onclick="addSubtitleField()">Agregar Subtítulo</button>
+            <div id="subtitle-fields"></div>
+        </div>
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -32,11 +35,15 @@
     <div class="iframe-preview" id="iframe-preview"></div>
 
     <script>
-        const gDriveApikey = "AIzaSyAIpSmdpo48g_EK9kQdcuDKEYJtyqNEGAU";
+        const gDriveApikey = "AIzaSyAIpSmdpo48g_EK9kQdcuDKEYJtyqNEGAU"; // Reemplaza con tu clave de API
 
         function isValidUrl(url) {
-            try { new URL(url); return true; } 
-            catch (e) { return false; }
+            try {
+                new URL(url);
+                return true;
+            } catch (e) {
+                return false;
+            }
         }
 
         function extractGoogleDriveId(url) {
@@ -48,7 +55,9 @@
             const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${gDriveApikey}`;
             try {
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error("Archivo no público o inexistente");
+                if (!response.ok) {
+                    throw new Error("Error al acceder al archivo. Asegúrate de que el archivo sea público.");
+                }
                 return apiUrl;
             } catch (error) {
                 alert(error.message);
@@ -56,11 +65,24 @@
             }
         }
 
+        function addSubtitleField() {
+            const container = document.getElementById('subtitle-fields');
+            const fieldIndex = container.children.length + 1;
+
+            const subtitleField = document.createElement('div');
+            subtitleField.innerHTML = `
+                <label for="subtitle-${fieldIndex}">Subtítulo ${fieldIndex} (URL o ID):</label>
+                <input type="text" id="subtitle-${fieldIndex}" placeholder="Ejemplo: https://drive.google.com/file/d/FILE_ID/view">
+                <label for="subtitle-lang-${fieldIndex}">Idioma (${fieldIndex}):</label>
+                <input type="text" id="subtitle-lang-${fieldIndex}" placeholder="es, en, fr...">
+            `;
+            container.appendChild(subtitleField);
+        }
+
         async function generateIframe() {
             const service = document.getElementById('service').value;
             const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
-            const subtitlesInput = document.getElementById('subtitles').value.trim();
 
             let videoUrl;
 
@@ -69,37 +91,64 @@
             } else if (service === "pixeldrain") {
                 videoUrl = `https://pixeldrain.com/api/file/${videoInput}`;
             } else if (service === "googledrive") {
-                const fileId = videoInput.startsWith("https://") 
-                    ? extractGoogleDriveId(videoInput) 
-                    : videoInput;
-                videoUrl = await getGoogleDriveFileUrl(fileId);
+                if (videoInput.startsWith("https://drive.google.com")) {
+                    const fileId = extractGoogleDriveId(videoInput);
+                    if (!fileId) {
+                        alert("Enlace de Google Drive no válido.");
+                        return;
+                    }
+                    videoUrl = await getGoogleDriveFileUrl(fileId);
+                } else {
+                    videoUrl = await getGoogleDriveFileUrl(videoInput);
+                }
             }
 
             if (!videoInput || !videoUrl) {
-                alert("ID/URL del video inválido");
+                alert("Por favor, ingresa un ID/URL válido.");
                 return;
             }
 
-            if ((service === "direct" && !isValidUrl(videoUrl)) || 
-                (posterUrl && !isValidUrl(posterUrl))) {
-                alert("URLs inválidas");
+            if ((service === "direct" && !isValidUrl(videoUrl)) || (posterUrl && !isValidUrl(posterUrl))) {
+                alert("Por favor, ingresa URLs válidas.");
                 return;
             }
 
-            // Procesar subtítulos
+            // Obtener subtítulos
+            const subtitleFields = document.querySelectorAll('#subtitle-fields input[type="text"]');
             const subtitles = [];
-            subtitlesInput.split('\n').forEach(line => {
-                const [lang, url] = line.split('|');
-                if (lang && url && isValidUrl(url)) {
-                    subtitles.push(`${encodeURIComponent(lang)}|${encodeURIComponent(url)}`);
+            for (let i = 0; i < subtitleFields.length; i += 2) {
+                const subtitleUrl = subtitleFields[i].value.trim();
+                const subtitleLang = subtitleFields[i + 1].value.trim();
+                if (subtitleUrl && subtitleLang) {
+                    if (subtitleUrl.startsWith("https://drive.google.com")) {
+                        const fileId = extractGoogleDriveId(subtitleUrl);
+                        if (fileId) {
+                            subtitles.push({
+                                url: await getGoogleDriveFileUrl(fileId),
+                                lang: subtitleLang
+                            });
+                        }
+                    } else {
+                        subtitles.push({
+                            url: subtitleUrl,
+                            lang: subtitleLang
+                        });
+                    }
                 }
+            }
+
+            // Generar URL del iframe
+            const queryParams = new URLSearchParams();
+            queryParams.set('video', videoUrl);
+            if (posterUrl) queryParams.set('poster', posterUrl);
+            subtitles.forEach((subtitle, index) => {
+                queryParams.set(`subtitle${index + 1}`, subtitle.url);
+                queryParams.set(`subtitle${index + 1}-lang`, subtitle.lang);
             });
 
-            const iframeSrc = `https://jeison-ramos.github.io/player/player.html` +
-                `?video=${encodeURIComponent(videoUrl)}` +
-                `&poster=${encodeURIComponent(posterUrl)}` +
-                `&subtitles=${subtitles.join(',')}`;
+            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${queryParams.toString()}`;
 
+            // Mostrar el iframe generado
             const iframePreview = document.getElementById('iframe-preview');
             iframePreview.innerHTML = `
                 <h2>Iframe Generado:</h2>
