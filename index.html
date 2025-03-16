@@ -22,6 +22,13 @@
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
+        <!-- Campos para subtítulos -->
+        <div id="subtitles-container">
+            <h3>Subtítulos</h3>
+            <button type="button" onclick="addSubtitleField()">Agregar Subtítulo</button>
+            <div id="subtitle-fields"></div>
+        </div>
+
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
 
@@ -40,24 +47,36 @@
         }
 
         function extractGoogleDriveId(url) {
-            // Extraer el ID del archivo desde un enlace público de Google Drive
             const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             return match ? match[1] : null;
         }
 
         async function getGoogleDriveFileUrl(fileId) {
-            // Usar la API de Google Drive para obtener la URL directa del archivo
             const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${gDriveApikey}`;
             try {
                 const response = await fetch(apiUrl);
                 if (!response.ok) {
                     throw new Error("Error al acceder al archivo. Asegúrate de que el archivo sea público.");
                 }
-                return apiUrl; // Devuelve la URL directa
+                return apiUrl;
             } catch (error) {
                 alert(error.message);
                 return null;
             }
+        }
+
+        function addSubtitleField() {
+            const container = document.getElementById('subtitle-fields');
+            const fieldIndex = container.children.length + 1;
+
+            const subtitleField = document.createElement('div');
+            subtitleField.innerHTML = `
+                <label for="subtitle-${fieldIndex}">Subtítulo ${fieldIndex} (URL o ID):</label>
+                <input type="text" id="subtitle-${fieldIndex}" placeholder="Ejemplo: https://drive.google.com/file/d/FILE_ID/view">
+                <label for="subtitle-lang-${fieldIndex}">Idioma (${fieldIndex}):</label>
+                <input type="text" id="subtitle-lang-${fieldIndex}" placeholder="es, en, fr...">
+            `;
+            container.appendChild(subtitleField);
         }
 
         async function generateIframe() {
@@ -67,40 +86,67 @@
 
             let videoUrl;
 
-            // Generar URL según el servicio seleccionado
             if (service === "direct") {
-                videoUrl = videoInput; // URL completa directa
+                videoUrl = videoInput;
             } else if (service === "pixeldrain") {
                 videoUrl = `https://pixeldrain.com/api/file/${videoInput}`;
             } else if (service === "googledrive") {
                 if (videoInput.startsWith("https://drive.google.com")) {
-                    // Extraer el ID del enlace público
                     const fileId = extractGoogleDriveId(videoInput);
                     if (!fileId) {
                         alert("Enlace de Google Drive no válido.");
                         return;
                     }
-                    videoUrl = await getGoogleDriveFileUrl(fileId); // Usar la API de Google Drive
+                    videoUrl = await getGoogleDriveFileUrl(fileId);
                 } else {
-                    // Asumimos que se ingresó solo el ID
                     videoUrl = await getGoogleDriveFileUrl(videoInput);
                 }
             }
 
-            // Validar campos obligatorios
             if (!videoInput || !videoUrl) {
                 alert("Por favor, ingresa un ID/URL válido.");
                 return;
             }
 
-            // Validar formato de URLs
             if ((service === "direct" && !isValidUrl(videoUrl)) || (posterUrl && !isValidUrl(posterUrl))) {
                 alert("Por favor, ingresa URLs válidas.");
                 return;
             }
 
+            // Obtener subtítulos
+            const subtitleFields = document.querySelectorAll('#subtitle-fields input[type="text"]');
+            const subtitles = [];
+            for (let i = 0; i < subtitleFields.length; i += 2) {
+                const subtitleUrl = subtitleFields[i].value.trim();
+                const subtitleLang = subtitleFields[i + 1].value.trim();
+                if (subtitleUrl && subtitleLang) {
+                    if (subtitleUrl.startsWith("https://drive.google.com")) {
+                        const fileId = extractGoogleDriveId(subtitleUrl);
+                        if (fileId) {
+                            subtitles.push({
+                                url: await getGoogleDriveFileUrl(fileId),
+                                lang: subtitleLang
+                            });
+                        }
+                    } else {
+                        subtitles.push({
+                            url: subtitleUrl,
+                            lang: subtitleLang
+                        });
+                    }
+                }
+            }
+
             // Generar URL del iframe
-            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?video=${encodeURIComponent(videoUrl)}&poster=${encodeURIComponent(posterUrl)}`;
+            const queryParams = new URLSearchParams();
+            queryParams.set('video', videoUrl);
+            if (posterUrl) queryParams.set('poster', posterUrl);
+            subtitles.forEach((subtitle, index) => {
+                queryParams.set(`subtitle${index + 1}`, subtitle.url);
+                queryParams.set(`subtitle${index + 1}-lang`, subtitle.lang);
+            });
+
+            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${queryParams.toString()}`;
 
             // Mostrar el iframe generado
             const iframePreview = document.getElementById('iframe-preview');
