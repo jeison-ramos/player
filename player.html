@@ -2,13 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reproductor Fluid Player</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Incluye Fluid Player -->
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
@@ -54,7 +51,7 @@
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
+        const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
 
         // Leer subtítulos
@@ -70,6 +67,8 @@
             });
             index++;
         }
+
+        console.log("Subtítulos cargados:", subtitles);
 
         // Configurar el reproductor
         fluidPlayer(
