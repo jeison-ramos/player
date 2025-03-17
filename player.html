@@ -14,7 +14,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita scrollbars innecesarios */
+            overflow: hidden;
         }
 
         #video-container {
@@ -23,7 +23,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
+            background-color: #000;
         }
 
         #video-player {
@@ -31,16 +31,15 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain; /* Mantiene la relación de aspecto y evita recortes */
-            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
+            object-fit: contain;
+            aspect-ratio: 16 / 9;
         }
 
-        /* Estilos específicos para dispositivos móviles en modo vertical */
         @media screen and (max-aspect-ratio: 1/1) {
             #video-player {
                 width: 100%;
                 height: auto;
-                object-fit: contain; /* Asegura que el video se ajuste sin recortes */
+                object-fit: contain;
             }
         }
     </style>
@@ -58,21 +57,36 @@
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
+        // Leer subtítulos
+        const subtitles = [];
+        let index = 1;
+        while (params.has(`subtitle${index}`) && params.has(`subtitle${index}-lang`)) {
+            subtitles.push({
+                src: params.get(`subtitle${index}`),
+                kind: 'subtitles',
+                srclang: params.get(`subtitle${index}-lang`),
+                label: params.get(`subtitle${index}-lang`).toUpperCase(),
+                default: index === 1 // El primer subtítulo será el predeterminado
+            });
+            index++;
+        }
+
         // Configurar el reproductor
         fluidPlayer(
             'video-player', {
                 layoutControls: {
                     primaryColor: "#FF6600",
-                    posterImage: posterUrl || null, // Evitar errores si no hay portada
-                    fillToContainer: true, // Hace que el reproductor llene el contenedor
-                    autoPlay: false, // Desactiva la reproducción automática
-                    allowTheatre: true, // Permite modo teatro
-                    allowFullScreen: true, // Permite pantalla completa
+                    posterImage: posterUrl || null,
+                    fillToContainer: true,
+                    autoPlay: false,
+                    allowTheatre: true,
+                    allowFullScreen: true,
                     controlBar: {
-                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
-                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
+                        autoHide: true,
+                        autoHideTimeout: 3
                     }
-                }
+                },
+                tracks: subtitles // Agregar subtítulos al reproductor
             }
         );
 
@@ -90,103 +104,5 @@
             `;
         };
     </script>
-
-      <style>
-  /* Estilos generales */
-  .overlay-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  .overlay-gif {
-    max-width: 80%;
-    max-height: 80%;
-    border-radius: 10px;
-  }
-
-  .skip-button {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    z-index: 10000;
-  }
-
-  .skip-button:hover {
-    background-color: #e60000;
-  }
-
-  body.blocked {
-    overflow: hidden; /* Desactivar el scroll mientras está el overlay */
-  }
-</style>
-
-<!-- Contenedor del overlay -->
-<div class='overlay-container' id='overlay'>
-  <img alt='Cargando...' class='overlay-gif' src='https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'/>
-  <button class='skip-button' id='skipButton'>Saltar en <span id='countdown'>10</span> segundos</button>
-</div>
-
-<script type='text/javascript'>
-  // <![CDATA[
-  // Variables globales
-  const directLink = "https://ptakeemsaifegro.net/4/7391009"; // Reemplaza con tu enlace directo
-  const overlay = document.getElementById("overlay");
-  const skipButton = document.getElementById("skipButton");
-  const countdownElement = document.getElementById("countdown");
-
-  let countdown = 10;
-  let isCountdownFinished = false;
-  let isFirstClickAfterCountdown = true;
-
-  // Temporizador de 10 segundos
-  const interval = setInterval(() => {
-    countdown--;
-    countdownElement.textContent = countdown;
-
-    if (countdown <= 0) {
-      clearInterval(interval);
-      countdownElement.textContent = "Saltar";
-      isCountdownFinished = true; // Marcar que el contador ha terminado
-    }
-  }, 1000);
-
-  // Evento de clic en el botón
-  skipButton.addEventListener("click", () => {
-    if (!isCountdownFinished) {
-      // Si el contador no ha terminado, redirigir al direct-link
-      window.open(directLink, "_blank");
-    } else {
-      if (isFirstClickAfterCountdown) {
-        // Primer clic después del contador: redirigir al direct-link
-        window.open(directLink, "_blank");
-        isFirstClickAfterCountdown = false; // Marcar que ya se hizo el primer clic
-      } else {
-        // Segundo clic después del contador: quitar el overlay
-        overlay.style.display = "none";
-        document.body.classList.remove("blocked"); // Habilitar el scroll
-      }
-    }
-  });
-
-  // Bloquear el scroll inicialmente
-  document.body.classList.add("blocked");
-  // ]]>
-</script>
-   </body>
+</body>
 </html>
