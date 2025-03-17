@@ -9,15 +9,8 @@
 <body>
     <h1>Generador de Iframe para Fluid Player</h1>
     <form id="iframe-generator">
-        <label for="service">Servicio:</label>
-        <select id="service">
-            <option value="direct">Directo (URL completa)</option>
-            <option value="pixeldrain">Pixeldrain (ID del archivo)</option>
-            <option value="googledrive">Google Drive (ID o enlace público)</option>
-        </select>
-
-        <label for="video-id">ID/URL del Video:</label>
-        <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o https://drive.google.com/file/d/FILE_ID/view (Google Drive)" required>
+        <label for="video-url">URL del Video:</label>
+        <input type="text" id="video-url" placeholder="Ejemplo: https://example.com/video.mp4" required>
 
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
@@ -35,81 +28,26 @@
     <div class="iframe-preview" id="iframe-preview"></div>
 
     <script>
-        const gDriveApikey = "AIzaSyAIpSmdpo48g_EK9kQdcuDKEYJtyqNEGAU"; // Reemplaza con tu clave de API
-
-        function isValidUrl(url) {
-            try {
-                new URL(url);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function extractGoogleDriveId(url) {
-            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-            return match ? match[1] : null;
-        }
-
-        async function getGoogleDriveFileUrl(fileId) {
-            const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${gDriveApikey}`;
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error("Error al acceder al archivo. Asegúrate de que el archivo sea público.");
-                }
-                return apiUrl;
-            } catch (error) {
-                alert(error.message);
-                return null;
-            }
-        }
-
         function addSubtitleField() {
             const container = document.getElementById('subtitle-fields');
             const fieldIndex = container.children.length + 1;
 
             const subtitleField = document.createElement('div');
             subtitleField.innerHTML = `
-                <label for="subtitle-${fieldIndex}">Subtítulo ${fieldIndex} (URL o ID):</label>
-                <input type="text" id="subtitle-${fieldIndex}" placeholder="Ejemplo: https://drive.google.com/file/d/FILE_ID/view">
+                <label for="subtitle-${fieldIndex}">Subtítulo ${fieldIndex} (URL):</label>
+                <input type="text" id="subtitle-${fieldIndex}" placeholder="Ejemplo: https://example.com/subtitles.vtt">
                 <label for="subtitle-lang-${fieldIndex}">Idioma (${fieldIndex}):</label>
                 <input type="text" id="subtitle-lang-${fieldIndex}" placeholder="es, en, fr...">
             `;
             container.appendChild(subtitleField);
         }
 
-        async function generateIframe() {
-            const service = document.getElementById('service').value;
-            const videoInput = document.getElementById('video-id').value.trim();
+        function generateIframe() {
+            const videoUrl = document.getElementById('video-url').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
 
-            let videoUrl;
-
-            if (service === "direct") {
-                videoUrl = videoInput;
-            } else if (service === "pixeldrain") {
-                videoUrl = `https://pixeldrain.com/api/file/${videoInput}`;
-            } else if (service === "googledrive") {
-                if (videoInput.startsWith("https://drive.google.com")) {
-                    const fileId = extractGoogleDriveId(videoInput);
-                    if (!fileId) {
-                        alert("Enlace de Google Drive no válido.");
-                        return;
-                    }
-                    videoUrl = await getGoogleDriveFileUrl(fileId);
-                } else {
-                    videoUrl = await getGoogleDriveFileUrl(videoInput);
-                }
-            }
-
-            if (!videoInput || !videoUrl) {
-                alert("Por favor, ingresa un ID/URL válido.");
-                return;
-            }
-
-            if ((service === "direct" && !isValidUrl(videoUrl)) || (posterUrl && !isValidUrl(posterUrl))) {
-                alert("Por favor, ingresa URLs válidas.");
+            if (!videoUrl) {
+                alert("Por favor, ingresa una URL válida para el video.");
                 return;
             }
 
@@ -120,20 +58,10 @@
                 const subtitleUrl = subtitleFields[i].value.trim();
                 const subtitleLang = subtitleFields[i + 1].value.trim();
                 if (subtitleUrl && subtitleLang) {
-                    if (subtitleUrl.startsWith("https://drive.google.com")) {
-                        const fileId = extractGoogleDriveId(subtitleUrl);
-                        if (fileId) {
-                            subtitles.push({
-                                url: `https://drive.google.com/uc?export=download&id=${fileId}`,
-                                lang: subtitleLang
-                            });
-                        }
-                    } else {
-                        subtitles.push({
-                            url: subtitleUrl,
-                            lang: subtitleLang
-                        });
-                    }
+                    subtitles.push({
+                        url: subtitleUrl,
+                        lang: subtitleLang
+                    });
                 }
             }
 
