@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Subtítulos</title>
-    <!-- Estilos de Video.js -->
-    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
+    <title>Reproductor Dinámico</title>
     <style>
         body {
             margin: 0;
@@ -14,158 +12,94 @@
             height: 100%;
             overflow: hidden;
         }
-        .video-js {
+        video {
             width: 100% !important;
             height: 100vh !important;
+            object-fit: contain;
         }
     </style>
 </head>
 <body>
-    <video id="myPlayer" class="video-js vjs-default-skin" controls preload="auto" playsinline>
-        <p class="vjs-no-js">
-            Para ver este video, habilita JavaScript y usa un navegador que soporte HTML5.
-        </p>
-    </video>
+    <div id="video-container"></div>
 
-    <!-- Script de Video.js -->
-    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
-        const subtitleWebVTT = params.get('subtitle_webvtt') || '';
+        const playerType = params.get('player') || 'videojs';
 
-        // Inicializar Video.js
-        const player = videojs('myPlayer', {
-            controls: true,
-            poster: posterUrl,
-            preload: 'auto',
-            sources: [{
-                src: videoUrl,
-                type: 'video/mp4'
-            }],
-            tracks: subtitleWebVTT ? [
-                {
-                    kind: 'subtitles',
-                    src: subtitleWebVTT,
-                    srclang: 'es',
-                    label: 'Español',
-                    default: true
-                }
-            ] : []
-        });
+        const container = document.getElementById('video-container');
 
-        // Forzar la carga de subtítulos en iOS
-        if (subtitleWebVTT) {
-            const trackElement = document.createElement('track');
-            trackElement.kind = 'subtitles';
-            trackElement.src = subtitleWebVTT;
-            trackElement.srclang = 'es';
-            trackElement.label = 'Español';
-            trackElement.default = true;
-
-            const videoElement = document.getElementById('myPlayer');
-            videoElement.appendChild(trackElement);
-        }
-
-        // Mostrar error si el video no carga
-        player.on('error', () => {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.color = 'white';
-            errorDiv.style.textAlign = 'center';
-            errorDiv.style.fontSize = '1.5em';
-            errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
-            document.body.appendChild(errorDiv);
-        });
-    </script>
-
-    <!-- Overlay existente -->
-    <style>
-        .overlay-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .overlay-gif {
-            max-width: 80%;
-            max-height: 80%;
-            border-radius: 10px;
-        }
-
-        .skip-button {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background-color: #ff4d4d;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            z-index: 10000;
-        }
-
-        .skip-button:hover {
-            background-color: #e60000;
-        }
-
-        body.blocked {
-            overflow: hidden;
-        }
-    </style>
-
-    <div class='overlay-container' id='overlay'>
-        <img alt='Cargando...' class='overlay-gif' src='https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'/>
-        <button class='skip-button' id='skipButton'>Saltar en <span id='countdown'>10</span> segundos</button>
-    </div>
-
-    <script>
-        const directLink = "https://ptakeemsaifegro.net/4/7391009";
-        const overlay = document.getElementById("overlay");
-        const skipButton = document.getElementById("skipButton");
-        const countdownElement = document.getElementById("countdown");
-
-        let countdown = 10;
-        let isCountdownFinished = false;
-        let isFirstClickAfterCountdown = true;
-
-        const interval = setInterval(() => {
-            countdown--;
-            countdownElement.textContent = countdown;
-
-            if (countdown <= 0) {
-                clearInterval(interval);
-                countdownElement.textContent = "Saltar";
-                isCountdownFinished = true;
-            }
-        }, 1000);
-
-        skipButton.addEventListener("click", () => {
-            if (!isCountdownFinished) {
-                window.open(directLink, "_blank");
+        // Función para cargar el reproductor seleccionado
+        function loadPlayer() {
+            if (playerType === 'videojs') {
+                loadVideoJS();
+            } else if (playerType === 'plyr') {
+                loadPlyr();
             } else {
-                if (isFirstClickAfterCountdown) {
-                    window.open(directLink, "_blank");
-                    isFirstClickAfterCountdown = false;
-                } else {
-                    overlay.style.display = "none";
-                    document.body.classList.remove("blocked");
-                }
+                console.error('Tipo de reproductor no soportado.');
             }
-        });
+        }
 
-        document.body.classList.add("blocked");
+        // Cargar Video.js
+        function loadVideoJS() {
+            const script = document.createElement('script');
+            script.src = 'https://vjs.zencdn.net/7.20.1/video.min.js';
+            script.onload = () => {
+                const link = document.createElement('link');
+                link.href = 'https://vjs.zencdn.net/7.20.1/video-js.css';
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+
+                const videoElement = document.createElement('video');
+                videoElement.id = 'myPlayer';
+                videoElement.className = 'video-js vjs-default-skin';
+                videoElement.setAttribute('controls', '');
+                videoElement.setAttribute('preload', 'auto');
+                videoElement.setAttribute('playsinline', '');
+                videoElement.setAttribute('poster', posterUrl);
+
+                const source = document.createElement('source');
+                source.src = videoUrl;
+                source.type = 'video/mp4';
+                videoElement.appendChild(source);
+
+                container.appendChild(videoElement);
+
+                videojs('myPlayer');
+            };
+            document.body.appendChild(script);
+        }
+
+        // Cargar Plyr
+        function loadPlyr() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.plyr.io/3.7.8/plyr.js';
+            script.onload = () => {
+                const link = document.createElement('link');
+                link.href = 'https://cdn.plyr.io/3.7.8/plyr.css';
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+
+                const videoElement = document.createElement('video');
+                videoElement.controls = true;
+                videoElement.poster = posterUrl;
+
+                const source = document.createElement('source');
+                source.src = videoUrl;
+                source.type = 'video/mp4';
+                videoElement.appendChild(source);
+
+                container.appendChild(videoElement);
+
+                const player = new Plyr(videoElement);
+            };
+            document.body.appendChild(script);
+        }
+
+        // Inicializar el reproductor
+        loadPlayer();
     </script>
 </body>
 </html>
