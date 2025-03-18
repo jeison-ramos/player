@@ -60,11 +60,6 @@
 
         // Función para cargar el reproductor seleccionado
         function loadPlayer() {
-            if (!videoUrl) {
-                console.error('No se proporcionó una URL de video.');
-                return;
-            }
-
             if (playerType === 'videojs') {
                 loadVideoJS();
             } else if (playerType === 'plyr') {
@@ -89,8 +84,7 @@
                 videoElement.className = 'video-js vjs-default-skin vjs-big-play-centered'; // Centra el botón de reproducción
                 videoElement.setAttribute('controls', '');
                 videoElement.setAttribute('preload', 'auto'); // Precarga el video
-                videoElement.setAttribute('playsinline', ''); // Importante para iOS
-                videoElement.setAttribute('muted', ''); // Mudo por defecto para cumplir con Autoplay
+                videoElement.setAttribute('playsinline', '');
                 videoElement.setAttribute('poster', posterUrl);
 
                 const source = document.createElement('source');
@@ -100,16 +94,9 @@
 
                 container.appendChild(videoElement);
 
-                const player = videojs('myPlayer', {
+                videojs('myPlayer', {
                     fluid: true, // Hace que el reproductor sea responsive
-                    aspectRatio: '16:9', // Proporción de aspecto estándar
-                    autoplay: true, // Intenta reproducir automáticamente
-                    muted: true // Mudo por defecto para cumplir con Autoplay
-                });
-
-                // Detectar errores
-                player.on('error', (error) => {
-                    console.error('Error en Video.js:', error);
+                    aspectRatio: '16:9' // Proporción de aspecto estándar
                 });
             };
             document.body.appendChild(script);
@@ -149,12 +136,10 @@
                     loadSprite: true, // Habilita la carga de sprites CSS
                     blankVideo: 'https://cdn.plyr.io/static/blank.mp4', // Video en blanco para prevenir errores
                     autoplay: false, // Desactiva la reproducción automática
-                    preload: 'auto', // Precarga el video
-                    playsinline: true, // Importante para iOS
-                    muted: true // Mudo por defecto para cumplir con Autoplay
+                    preload: 'auto' // Precarga el video
                 });
 
-                // Detectar errores
+                // Verificar si el video se carga correctamente
                 player.on('error', (event) => {
                     console.error('Error al cargar el video en Plyr:', event.detail);
                 });
@@ -162,13 +147,6 @@
                 // Forzar la carga rápida del video
                 videoElement.preload = 'auto';
                 videoElement.load();
-
-                // Manejar interacción del usuario para activar audio
-                videoElement.addEventListener('click', () => {
-                    if (videoElement.muted) {
-                        videoElement.muted = false; // Activar audio al hacer clic
-                    }
-                });
             };
             document.body.appendChild(script);
         }
