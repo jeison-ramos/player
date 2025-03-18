@@ -9,6 +9,7 @@
 <body>
     <h1>Generador de Iframe para Video.js</h1>
     <form id="iframe-generator">
+        <!-- Selector de servicio -->
         <label for="service">Servicio:</label>
         <select id="service">
             <option value="direct">Directo (URL completa)</option>
@@ -16,17 +17,17 @@
             <option value="googledrive">Google Drive (ID o enlace público)</option>
         </select>
 
+        <!-- Campo para el video -->
         <label for="video-id">ID/URL del Video:</label>
         <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o https://drive.google.com/file/d/FILE_ID/view" required>
 
+        <!-- Campo para la imagen de portada -->
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
+        <!-- Campo para subtítulos WebVTT -->
         <label for="subtitle-webvtt">URL del Subtítulo (WebVTT):</label>
         <input type="text" id="subtitle-webvtt" placeholder="https://example.com/subtitulo.vtt">
-
-        <label for="subtitle-srt">URL del Subtítulo (SRT):</label>
-        <input type="text" id="subtitle-srt" placeholder="https://example.com/subtitulo.srt">
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -59,7 +60,6 @@
             const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
             const subtitleWebVTT = document.getElementById('subtitle-webvtt').value.trim();
-            const subtitleSRT = document.getElementById('subtitle-srt').value.trim();
 
             let videoUrl;
 
@@ -82,8 +82,7 @@
             const iframeParams = new URLSearchParams({
                 video: videoUrl,
                 poster: posterUrl,
-                subtitle_webvtt: subtitleWebVTT,
-                subtitle_srt: subtitleSRT
+                subtitle_webvtt: subtitleWebVTT
             });
 
             const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${iframeParams.toString()}`;
