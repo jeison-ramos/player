@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Subtítulos</title>
+    <title>Reproductor Video.js con Subtítulos y Anuncios VAST</title>
     <!-- Estilos de Video.js -->
     <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
+    <!-- Estilos de IMA Plugin -->
     <style>
         body {
             margin: 0;
@@ -29,12 +30,17 @@
 
     <!-- Script de Video.js -->
     <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
+    <!-- IMA Plugin de Video.js -->
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-ima@2.10.0/dist/videojs.ima.js"></script>
+
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
         const subtitleWebVTT = params.get('subtitle_webvtt') || '';
+        const vastUrl = params.get('vast_url') || '';
 
         // Inicializar Video.js
         const player = videojs('myPlayer', {
@@ -56,17 +62,19 @@
             ] : []
         });
 
-        // Forzar la carga de subtítulos en iOS
-        if (subtitleWebVTT) {
-            const trackElement = document.createElement('track');
-            trackElement.kind = 'subtitles';
-            trackElement.src = subtitleWebVTT;
-            trackElement.srclang = 'es';
-            trackElement.label = 'Español';
-            trackElement.default = true;
+        // Configurar IMA Plugin para Anuncios VAST
+        if (vastUrl) {
+            player.ima({
+                adTagUrl: vastUrl, // URL del anuncio VAST
+                debug: true, // Habilitar modo de depuración (opcional)
+                showControlsForJSAds: true // Mostrar controles durante los anuncios
+            });
 
-            const videoElement = document.getElementById('myPlayer');
-            videoElement.appendChild(trackElement);
+            // Reiniciar el reproductor después de cargar los anuncios
+            player.on('readyforpreroll', () => {
+                player.ima.requestAds();
+                player.play();
+            });
         }
 
         // Mostrar error si el video no carga
@@ -125,6 +133,6 @@
         }
     </style>
 
-
+   
 </body>
 </html>
