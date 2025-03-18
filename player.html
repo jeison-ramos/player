@@ -2,53 +2,33 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor Fluid Player con Subtítulos</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor Video.js con Subtítulos</title>
+    <!-- Estilos de Video.js -->
+    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
     <style>
-        body, html {
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
         }
-
-        #video-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000;
-        }
-
-        #video-player {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            aspect-ratio: 16 / 9;
-        }
-
-        @media screen and (max-aspect-ratio: 1/1) {
-            #video-player {
-                width: 100%;
-                height: auto;
-                object-fit: contain;
-            }
+        .video-js {
+            width: 100% !important;
+            height: 100vh !important;
         }
     </style>
 </head>
 <body>
-    <div id="video-container">
-        <video id="video-player" controls>
-            Tu navegador no soporta el elemento de video.
-        </video>
-    </div>
+    <video id="myPlayer" class="video-js vjs-default-skin" controls>
+        <p class="vjs-no-js">
+            Para ver este video, habilita JavaScript y usa un navegador que soporte HTML5.
+        </p>
+    </video>
 
+    <!-- Script de Video.js -->
+    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
@@ -57,49 +37,45 @@
         const subtitleWebVTT = params.get('subtitle_webvtt') || '';
         const subtitleSRT = params.get('subtitle_srt') || '';
 
-        // Configurar Fluid Player con subtítulos
-        fluidPlayer('video-player', {
-            layoutControls: {
-                primaryColor: "#FF6600",
-                posterImage: posterUrl || null,
-                fillToContainer: true,
-                autoPlay: false,
-                allowTheatre: true,
-                allowFullScreen: true,
-                controlBar: { autoHide: true, autoHideTimeout: 3 }
+        // Inicializar Video.js
+        const player = videojs('myPlayer', {
+            html5: {
+                vhs: {
+                    overrideNative: true
+                }
             },
-            captions: {
-                showCaptions: true,
-                captionSources: [
-                    {
-                        src: subtitleWebVTT,
-                        type: 'text/vtt',
-                        label: 'Español',
-                        language: 'es',
-                        default: true
-                    },
-                    {
-                        src: subtitleSRT,
-                        type: 'text/srt',
-                        label: 'Inglés',
-                        language: 'en'
-                    }
-                ]
-            }
+            controls: true,
+            poster: posterUrl,
+            sources: [{
+                src: videoUrl,
+                type: 'video/mp4'
+            }],
+            tracks: [
+                {
+                    kind: 'subtitles',
+                    src: subtitleWebVTT,
+                    srclang: 'es',
+                    label: 'Español',
+                    default: true
+                },
+                {
+                    kind: 'subtitles',
+                    src: subtitleSRT,
+                    srclang: 'en',
+                    label: 'Inglés'
+                }
+            ]
         });
 
-        // Establecer fuente del video
-        const videoElement = document.getElementById('video-player');
-        videoElement.src = videoUrl;
-
-        // Manejar errores
-        videoElement.onerror = () => {
-            document.getElementById('video-container').innerHTML = `
-                <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error al cargar el video. Verifica la URL.
-                </div>
-            `;
-        };
+        // Mostrar error si el video no carga
+        player.on('error', () => {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.color = 'white';
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.fontSize = '1.5em';
+            errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
+            document.body.appendChild(errorDiv);
+        });
     </script>
 
     <!-- Overlay existente -->
