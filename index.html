@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Iframe con Subtítulos y Anuncios VAST</title>
+    <title>Generador de Iframe con Subtítulos</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -28,10 +28,6 @@
         <!-- Campo para subtítulos WebVTT -->
         <label for="subtitle-webvtt">URL del Subtítulo (WebVTT):</label>
         <input type="text" id="subtitle-webvtt" placeholder="https://example.com/subtitulo.vtt">
-
-        <!-- Campo para URL de Anuncios VAST -->
-        <label for="vast-url">URL de Anuncio VAST:</label>
-        <input type="text" id="vast-url" placeholder="https://example.com/vast.xml">
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -64,7 +60,6 @@
             const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
             const subtitleWebVTT = document.getElementById('subtitle-webvtt').value.trim();
-            const vastUrl = document.getElementById('vast-url').value.trim();
 
             let videoUrl;
 
@@ -87,8 +82,7 @@
             const iframeParams = new URLSearchParams({
                 video: videoUrl,
                 poster: posterUrl,
-                subtitle_webvtt: subtitleWebVTT,
-                vast_url: vastUrl
+                subtitle_webvtt: subtitleWebVTT
             });
 
             const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${iframeParams.toString()}`;
