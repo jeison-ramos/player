@@ -3,24 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Iframe</title>
+    <title>Generador de Iframe con Subtítulos</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>Generador de Iframe para Fluid Player</h1>
     <form id="iframe-generator">
-        <label for="video-url">URL del Video:</label>
-        <input type="text" id="video-url" placeholder="Ejemplo: https://example.com/video.mp4" required>
+        <!-- Selector de servicio -->
+        <label for="service">Servicio:</label>
+        <select id="service">
+            <option value="direct">Directo (URL completa)</option>
+            <option value="pixeldrain">Pixeldrain (ID del archivo)</option>
+            <option value="googledrive">Google Drive (ID o enlace público)</option>
+        </select>
 
+        <!-- Campo para el video -->
+        <label for="video-id">ID/URL del Video:</label>
+        <input type="text" id="video-id" placeholder="Ejemplo: tmMzuTHm (Pixeldrain) o https://drive.google.com/file/d/FILE_ID/view (Google Drive)" required>
+
+        <!-- Campo para la imagen de portada -->
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
-        <!-- Campos para subtítulos -->
-        <div id="subtitles-container">
-            <h3>Subtítulos</h3>
-            <button type="button" onclick="addSubtitleField()">Agregar Subtítulo</button>
-            <div id="subtitle-fields"></div>
-        </div>
+        <!-- Nuevos campos para subtítulos -->
+        <label for="subtitle-webvtt">URL del Subtítulo (WebVTT):</label>
+        <input type="text" id="subtitle-webvtt" placeholder="https://example.com/subtitulo.vtt">
+
+        <label for="subtitle-srt">URL del Subtítulo (SRT):</label>
+        <input type="text" id="subtitle-srt" placeholder="https://example.com/subtitulo.srt">
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -28,57 +38,63 @@
     <div class="iframe-preview" id="iframe-preview"></div>
 
     <script>
-        function addSubtitleField() {
-            const container = document.getElementById('subtitle-fields');
-            const fieldIndex = container.children.length + 1;
+        const gDriveApikey = "AIzaSyAIpSmdpo48g_EK9kQdcuDKEYJtyqNEGAU";
 
-            const subtitleField = document.createElement('div');
-            subtitleField.innerHTML = `
-                <label for="subtitle-${fieldIndex}">Subtítulo ${fieldIndex} (URL):</label>
-                <input type="text" id="subtitle-${fieldIndex}" placeholder="Ejemplo: https://example.com/subtitles.vtt">
-                <label for="subtitle-lang-${fieldIndex}">Idioma (${fieldIndex}):</label>
-                <input type="text" id="subtitle-lang-${fieldIndex}" placeholder="es, en, fr...">
-            `;
-            container.appendChild(subtitleField);
+        function isValidUrl(url) {
+            try { return new URL(url); } catch (e) { return false; }
         }
 
-        function generateIframe() {
-            const videoUrl = document.getElementById('video-url').value.trim();
+        function extractGoogleDriveId(url) {
+            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        }
+
+        async function getGoogleDriveFileUrl(fileId) {
+            const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${gDriveApikey}`;
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Error al acceder al archivo. Asegúrate de que el archivo sea público.");
+                return apiUrl;
+            } catch (error) { alert(error.message); return null; }
+        }
+
+        async function generateIframe() {
+            const service = document.getElementById('service').value;
+            const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
+            const subtitleWebVTT = document.getElementById('subtitle-webvtt').value.trim();
+            const subtitleSRT = document.getElementById('subtitle-srt').value.trim();
+
+            let videoUrl;
+
+            if (service === "direct") {
+                videoUrl = videoInput;
+            } else if (service === "pixeldrain") {
+                videoUrl = `https://pixeldrain.com/api/file/${videoInput}`;
+            } else if (service === "googledrive") {
+                const fileId = videoInput.startsWith("https://drive.google.com") 
+                    ? extractGoogleDriveId(videoInput) 
+                    : videoInput;
+                videoUrl = await getGoogleDriveFileUrl(fileId);
+            }
 
             if (!videoUrl) {
-                alert("Por favor, ingresa una URL válida para el video.");
+                alert("Por favor, ingresa un ID/URL válido.");
                 return;
             }
 
-            // Obtener subtítulos
-            const subtitleFields = document.querySelectorAll('#subtitle-fields input[type="text"]');
-            const subtitles = [];
-            for (let i = 0; i < subtitleFields.length; i += 2) {
-                const subtitleUrl = subtitleFields[i].value.trim();
-                const subtitleLang = subtitleFields[i + 1].value.trim();
-                if (subtitleUrl && subtitleLang) {
-                    subtitles.push({
-                        url: subtitleUrl,
-                        lang: subtitleLang
-                    });
-                }
-            }
-
-            // Generar URL del iframe
-            const queryParams = new URLSearchParams();
-            queryParams.set('video', videoUrl);
-            if (posterUrl) queryParams.set('poster', posterUrl);
-            subtitles.forEach((subtitle, index) => {
-                queryParams.set(`subtitle${index + 1}`, subtitle.url);
-                queryParams.set(`subtitle${index + 1}-lang`, subtitle.lang);
+            // Construir URL del iframe con subtítulos
+            const iframeParams = new URLSearchParams({
+                video: videoUrl,
+                poster: posterUrl,
+                subtitle_webvtt: subtitleWebVTT,
+                subtitle_srt: subtitleSRT
             });
 
-            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${queryParams.toString()}`;
+            const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${iframeParams.toString()}`;
 
             // Mostrar el iframe generado
-            const iframePreview = document.getElementById('iframe-preview');
-            iframePreview.innerHTML = `
+            document.getElementById('iframe-preview').innerHTML = `
                 <h2>Iframe Generado:</h2>
                 <textarea rows="4" style="width: 100%;">${`<iframe src="${iframeSrc}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`}</textarea>
                 <h3>Vista Previa:</h3>
