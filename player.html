@@ -60,6 +60,11 @@
 
         // Función para cargar el reproductor seleccionado
         function loadPlayer() {
+            if (!videoUrl) {
+                console.error('No se proporcionó una URL de video.');
+                return;
+            }
+
             if (playerType === 'videojs') {
                 loadVideoJS();
             } else if (playerType === 'plyr') {
