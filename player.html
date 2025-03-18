@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
@@ -58,31 +57,7 @@
         const subtitleWebVTT = params.get('subtitle_webvtt') || '';
         const subtitleSRT = params.get('subtitle_srt') || '';
 
-        // Configurar el reproductor
-        const videoElement = document.getElementById('video-player');
-
-        // Agregar subtítulos WebVTT
-        if (subtitleWebVTT) {
-            const trackWebVTT = document.createElement('track');
-            trackWebVTT.kind = 'subtitles';
-            trackWebVTT.src = subtitleWebVTT;
-            trackWebVTT.srclang = 'es'; // Idioma (ajústalo según tus subtítulos)
-            trackWebVTT.label = 'Español';
-            trackWebVTT.default = true; // Subtítulo por defecto
-            videoElement.appendChild(trackWebVTT);
-        }
-
-        // Agregar subtítulos SRT
-        if (subtitleSRT) {
-            const trackSRT = document.createElement('track');
-            trackSRT.kind = 'subtitles';
-            trackSRT.src = subtitleSRT;
-            trackSRT.srclang = 'en'; // Idioma (ajústalo según tus subtítulos)
-            trackSRT.label = 'Inglés';
-            videoElement.appendChild(trackSRT);
-        }
-
-        // Inicializar Fluid Player con soporte para subtítulos
+        // Configurar Fluid Player con subtítulos
         fluidPlayer('video-player', {
             layoutControls: {
                 primaryColor: "#FF6600",
@@ -94,11 +69,27 @@
                 controlBar: { autoHide: true, autoHideTimeout: 3 }
             },
             captions: {
-                showCaptions: true // Mostrar botón de subtítulos
+                showCaptions: true,
+                captionSources: [
+                    {
+                        src: subtitleWebVTT,
+                        type: 'text/vtt',
+                        label: 'Español',
+                        language: 'es',
+                        default: true
+                    },
+                    {
+                        src: subtitleSRT,
+                        type: 'text/srt',
+                        label: 'Inglés',
+                        language: 'en'
+                    }
+                ]
             }
         });
 
         // Establecer fuente del video
+        const videoElement = document.getElementById('video-player');
         videoElement.src = videoUrl;
 
         // Manejar errores
@@ -161,7 +152,7 @@
         <button class='skip-button' id='skipButton'>Saltar en <span id='countdown'>10</span> segundos</button>
     </div>
 
-    <script type='text/javascript'>
+    <script>
         const directLink = "https://ptakeemsaifegro.net/4/7391009";
         const overlay = document.getElementById("overlay");
         const skipButton = document.getElementById("skipButton");
