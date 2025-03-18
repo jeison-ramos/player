@@ -56,6 +56,19 @@
             ] : []
         });
 
+        // Forzar la carga de subtítulos en iOS
+        if (subtitleWebVTT) {
+            const trackElement = document.createElement('track');
+            trackElement.kind = 'subtitles';
+            trackElement.src = subtitleWebVTT;
+            trackElement.srclang = 'es';
+            trackElement.label = 'Español';
+            trackElement.default = true;
+
+            const videoElement = document.getElementById('myPlayer');
+            videoElement.appendChild(trackElement);
+        }
+
         // Mostrar error si el video no carga
         player.on('error', () => {
             const errorDiv = document.createElement('div');
@@ -110,8 +123,49 @@
         body.blocked {
             overflow: hidden;
         }
+    </style>
 
+    <div class='overlay-container' id='overlay'>
+        <img alt='Cargando...' class='overlay-gif' src='https://imgs.search.brave.com/_8br6NuBuXDDAA0_Woy6dYe7rNTsdtT1L0AlnxBaxGA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9naWZk/Yi5jb20vaW1hZ2Vz/L2hpZ2gvc29sby1s/ZXZlbGluZy00OTgt/eC0yNzgtZ2lmLTF2/ZXptNjhwdXhnN2p2/c24uZ2lm.gif'/>
+        <button class='skip-button' id='skipButton'>Saltar en <span id='countdown'>10</span> segundos</button>
+    </div>
 
-    
+    <script>
+        const directLink = "https://ptakeemsaifegro.net/4/7391009";
+        const overlay = document.getElementById("overlay");
+        const skipButton = document.getElementById("skipButton");
+        const countdownElement = document.getElementById("countdown");
+
+        let countdown = 10;
+        let isCountdownFinished = false;
+        let isFirstClickAfterCountdown = true;
+
+        const interval = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = countdown;
+
+            if (countdown <= 0) {
+                clearInterval(interval);
+                countdownElement.textContent = "Saltar";
+                isCountdownFinished = true;
+            }
+        }, 1000);
+
+        skipButton.addEventListener("click", () => {
+            if (!isCountdownFinished) {
+                window.open(directLink, "_blank");
+            } else {
+                if (isFirstClickAfterCountdown) {
+                    window.open(directLink, "_blank");
+                    isFirstClickAfterCountdown = false;
+                } else {
+                    overlay.style.display = "none";
+                    document.body.classList.remove("blocked");
+                }
+            }
+        });
+
+        document.body.classList.add("blocked");
+    </script>
 </body>
 </html>
