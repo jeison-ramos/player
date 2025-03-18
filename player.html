@@ -21,7 +21,7 @@
     </style>
 </head>
 <body>
-    <video id="myPlayer" class="video-js vjs-default-skin" controls>
+    <video id="myPlayer" class="video-js vjs-default-skin" controls preload="auto" playsinline>
         <p class="vjs-no-js">
             Para ver este video, habilita JavaScript y usa un navegador que soporte HTML5.
         </p>
@@ -35,36 +35,25 @@
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
         const subtitleWebVTT = params.get('subtitle_webvtt') || '';
-        const subtitleSRT = params.get('subtitle_srt') || '';
 
         // Inicializar Video.js
         const player = videojs('myPlayer', {
-            html5: {
-                vhs: {
-                    overrideNative: true
-                }
-            },
             controls: true,
             poster: posterUrl,
+            preload: 'auto',
             sources: [{
                 src: videoUrl,
                 type: 'video/mp4'
             }],
-            tracks: [
+            tracks: subtitleWebVTT ? [
                 {
                     kind: 'subtitles',
                     src: subtitleWebVTT,
                     srclang: 'es',
                     label: 'Español',
                     default: true
-                },
-                {
-                    kind: 'subtitles',
-                    src: subtitleSRT,
-                    srclang: 'en',
-                    label: 'Inglés'
                 }
-            ]
+            ] : []
         });
 
         // Mostrar error si el video no carga
