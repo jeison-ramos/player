@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Iframe con Subtítulos</title>
+    <title>Generador de Reproductores</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Generador de Iframe para Video.js</h1>
+    <h1>Generador de Reproductores</h1>
     <form id="iframe-generator">
         <!-- Selector de servicio -->
         <label for="service">Servicio:</label>
@@ -25,9 +25,18 @@
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
 
-        <!-- Campo para subtítulos WebVTT -->
-        <label for="subtitle-webvtt">URL del Subtítulo (WebVTT):</label>
-        <input type="text" id="subtitle-webvtt" placeholder="https://example.com/subtitulo.vtt">
+        <!-- Selector de reproductor -->
+        <label for="player-type">Tipo de Reproductor:</label>
+        <select id="player-type">
+            <option value="videojs">Video.js</option>
+            <option value="plyr">Plyr</option>
+            <option value="mediaelement">MediaElement.js</option>
+            <option value="shaka">Shaka Player</option>
+            <option value="clappr">Clappr</option>
+            <option value="flowplayer">Flowplayer</option>
+            <option value="jwplayer">JW Player (Gratis)</option>
+            <option value="native">Reproductor Nativo HTML5</option>
+        </select>
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -59,7 +68,7 @@
             const service = document.getElementById('service').value;
             const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
-            const subtitleWebVTT = document.getElementById('subtitle-webvtt').value.trim();
+            const playerType = document.getElementById('player-type').value;
 
             let videoUrl;
 
@@ -82,7 +91,7 @@
             const iframeParams = new URLSearchParams({
                 video: videoUrl,
                 poster: posterUrl,
-                subtitle_webvtt: subtitleWebVTT
+                player: playerType
             });
 
             const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${iframeParams.toString()}`;
