@@ -32,6 +32,15 @@
             width: 100% !important;
             height: 100% !important;
         }
+        /* Estilos específicos para Plyr */
+        .plyr--full-ui {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .plyr__video-wrapper {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body>
@@ -114,6 +123,11 @@
                 const player = new Plyr(videoElement, {
                     controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
                     ratio: '16:9' // Proporción de aspecto estándar
+                });
+
+                // Verificar si el video se carga correctamente
+                player.on('error', (event) => {
+                    console.error('Error al cargar el video en Plyr:', event.detail);
                 });
             };
             document.body.appendChild(script);
