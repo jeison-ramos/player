@@ -37,9 +37,12 @@
             width: 100% !important;
             height: 100% !important;
         }
-        .plyr__video-wrapper {
-            width: 100% !important;
-            height: 100% !important;
+        .plyr__controls {
+            opacity: 1 !important; /* Asegura que los controles sean visibles */
+            visibility: visible !important;
+        }
+        .plyr__control {
+            display: flex !important; /* Asegura que los botones sean visibles */
         }
     </style>
 </head>
@@ -121,9 +124,16 @@
                 container.appendChild(videoElement);
 
                 const player = new Plyr(videoElement, {
-                    controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                    controls: [
+                        'play',
+                        'progress',
+                        'current-time',
+                        'mute',
+                        'volume',
+                        'fullscreen'
+                    ], // Controles visibles
                     ratio: '16:9', // Proporción de aspecto estándar
-                    loadSprite: false, // Desactiva la carga de sprites CSS (optimización)
+                    loadSprite: true, // Habilita la carga de sprites CSS
                     blankVideo: 'https://cdn.plyr.io/static/blank.mp4', // Video en blanco para prevenir errores
                     autoplay: false, // Desactiva la reproducción automática
                     preload: 'auto' // Precarga el video
