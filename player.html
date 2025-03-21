@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Subtítulos</title>
+    <title>Reproductor Video.js</title>
     <!-- Estilos de Video.js -->
     <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
     <style>
@@ -34,7 +34,6 @@
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
-        const subtitleWebVTT = params.get('subtitle_webvtt') || '';
 
         // Inicializar Video.js
         const player = videojs('myPlayer', {
@@ -44,30 +43,8 @@
             sources: [{
                 src: videoUrl,
                 type: 'video/mp4'
-            }],
-            tracks: subtitleWebVTT ? [
-                {
-                    kind: 'subtitles',
-                    src: subtitleWebVTT,
-                    srclang: 'es',
-                    label: 'Español',
-                    default: true
-                }
-            ] : []
+            }]
         });
-
-        // Forzar la carga de subtítulos en iOS
-        if (subtitleWebVTT) {
-            const trackElement = document.createElement('track');
-            trackElement.kind = 'subtitles';
-            trackElement.src = subtitleWebVTT;
-            trackElement.srclang = 'es';
-            trackElement.label = 'Español';
-            trackElement.default = true;
-
-            const videoElement = document.getElementById('myPlayer');
-            videoElement.appendChild(trackElement);
-        }
 
         // Mostrar error si el video no carga
         player.on('error', () => {
