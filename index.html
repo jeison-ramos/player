@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Iframe con Subtítulos</title>
+    <title>Generador de Iframe</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,10 +24,6 @@
         <!-- Campo para la imagen de portada -->
         <label for="poster-url">URL de la Imagen de Portada:</label>
         <input type="text" id="poster-url" placeholder="https://example.com/poster.jpg">
-
-        <!-- Campo para subtítulos WebVTT -->
-        <label for="subtitle-webvtt">URL del Subtítulo (WebVTT):</label>
-        <input type="text" id="subtitle-webvtt" placeholder="https://example.com/subtitulo.vtt">
 
         <button type="button" onclick="generateIframe()">Generar Iframe</button>
     </form>
@@ -59,7 +55,6 @@
             const service = document.getElementById('service').value;
             const videoInput = document.getElementById('video-id').value.trim();
             const posterUrl = document.getElementById('poster-url').value.trim();
-            const subtitleWebVTT = document.getElementById('subtitle-webvtt').value.trim();
 
             let videoUrl;
 
@@ -81,8 +76,7 @@
 
             const iframeParams = new URLSearchParams({
                 video: videoUrl,
-                poster: posterUrl,
-                subtitle_webvtt: subtitleWebVTT
+                poster: posterUrl
             });
 
             const iframeSrc = `https://jeison-ramos.github.io/player/player.html?${iframeParams.toString()}`;
