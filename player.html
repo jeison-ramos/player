@@ -3,63 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Anuncios VAST</title>
-    <!-- Estilos de Video.js -->
-    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
+    <title>Reproductor con Anuncios VAST</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
         }
-        .video-js {
-            width: 100% !important;
-            height: 100vh !important;
+        #content {
+            position: relative;
+            width: 80%;
+            max-width: 800px;
+            height: 450px;
+        }
+        #video-player {
+            width: 100%;
+            height: 100%;
+        }
+        #ad-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
-    <video id="myPlayer" class="video-js vjs-default-skin" controls preload="auto" playsinline>
-        <p class="vjs-no-js">
-            Para ver este video, habilita JavaScript y usa un navegador que soporte HTML5.
-        </p>
-    </video>
+    <div id="content">
+        <!-- Contenedor del video -->
+        <video id="video-player" controls playsinline></video>
 
-    <!-- Script de Video.js -->
-    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
-    <!-- Script de IMA SDK -->
+        <!-- Contenedor del anuncio -->
+        <div id="ad-container"></div>
+    </div>
+
+    <!-- Script de Google IMA SDK -->
     <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-    <!-- Plugin de Video.js para IMA -->
-    <script src="https://cdn.jsdelivr.net/npm/videojs-ima@2/dist/videojs.ima.js"></script>
-
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
 
-        // Inicializar Video.js
-        const player = videojs('myPlayer', {
-            controls: true,
-            poster: posterUrl,
-            preload: 'auto',
-            sources: [{
-                src: videoUrl,
-                type: 'video/mp4'
-            }]
+        // Elementos del DOM
+        const videoPlayer = document.getElementById('video-player');
+        const adContainer = document.getElementById('ad-container');
+
+        // Configuración del reproductor
+        videoPlayer.src = videoUrl;
+        if (posterUrl) {
+            videoPlayer.poster = posterUrl;
+        }
+
+        // Inicializar Google IMA SDK
+        let adsLoader;
+        let adsManager;
+
+        function initIMA() {
+            // Crear AdsLoader
+            adsLoader = new google.ima.AdsLoader(adContainer);
+
+            // Escuchar eventos de anuncios
+            adsLoader.addEventListener(
+                google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,
+                onAdsManagerLoaded,
+                false
+            );
+            adsLoader.addEventListener(
+                google.ima.AdErrorEvent.Type.AD_ERROR,
+                onAdError,
+                false
+            );
+
+            // Solicitar anuncios
+            const adsRequest = new google.ima.AdsRequest();
+            adsRequest.adTagUrl = 'https://thusizulu.com/d/mZFiz.d/GxN/v/ZAGrUI/TeamE9LuXZ/UZl/kLP/T-YYxJNmzMMC3KMIzFAVt-N/jzEa3mMpzncVzOMEQQ'; // Reemplaza con tu URL de VAST
+            adsRequest.linearAdSlotWidth = 640;
+            adsRequest.linearAdSlotHeight = 480;
+
+            adsLoader.requestAds(adsRequest);
+        }
+
+        function onAdsManagerLoaded(adsManagerLoadedEvent) {
+            // Inicializar AdsManager
+            adsManager = adsManagerLoadedEvent.getAdsManager(videoPlayer);
+
+            // Escuchar eventos del AdsManager
+            adsManager.addEventListener(
+                google.ima.AdErrorEvent.Type.AD_ERROR,
+                onAdError
+            );
+            adsManager.addEventListener(
+                google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,
+                onContentPauseRequested
+            );
+            adsManager.addEventListener(
+                google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,
+                onContentResumeRequested
+            );
+
+            try {
+                // Iniciar la reproducción de anuncios
+                adsManager.init(640, 480, google.ima.ViewMode.NORMAL);
+                adsManager.start();
+            } catch (error) {
+                console.error('Error al iniciar AdsManager:', error);
+            }
+        }
+
+        function onAdError(adErrorEvent) {
+            console.error('Error de anuncio:', adErrorEvent.getError());
+            adsManager && adsManager.destroy();
+        }
+
+        function onContentPauseRequested() {
+            videoPlayer.pause();
+        }
+
+        function onContentResumeRequested() {
+            videoPlayer.play();
+        }
+
+        // Inicializar el reproductor
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            initIMA();
         });
 
-        // Configurar anuncios VAST
-        const options = {
-            adTagUrl: 'https://thusizulu.com/d/mZFiz.d/GxN/v/ZAGrUI/TeamE9LuXZ/UZl/kLP/T-YYxJNmzMMC3KMIzFAVt-N/jzEa3mMpzncVzOMEQQ'
-        };
-
-        player.ima(options);
-
         // Mostrar error si el video no carga
-        player.on('error', () => {
+        videoPlayer.addEventListener('error', () => {
             const errorDiv = document.createElement('div');
             errorDiv.style.color = 'white';
             errorDiv.style.textAlign = 'center';
