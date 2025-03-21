@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor con Anuncios VAST</title>
+    <title>Reproductor Plyr con Anuncios VAST</title>
+    <!-- Estilos de Plyr -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <style>
         body {
             margin: 0;
@@ -16,35 +18,21 @@
             align-items: center;
             background-color: #000;
         }
-        #content {
-            position: relative;
+        .plyr {
             width: 80%;
             max-width: 800px;
             height: 450px;
         }
-        #video-player {
-            width: 100%;
-            height: 100%;
-        }
-        #ad-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
     </style>
 </head>
 <body>
-    <div id="content">
-        <!-- Contenedor del video -->
-        <video id="video-player" controls playsinline></video>
+    <!-- Contenedor del video -->
+    <video id="player" class="plyr" controls playsinline>
+        <source src="" type="video/mp4" />
+    </video>
 
-        <!-- Contenedor del anuncio -->
-        <div id="ad-container"></div>
-    </div>
-
+    <!-- Script de Plyr -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <!-- Script de Google IMA SDK -->
     <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
     <script>
@@ -54,22 +42,24 @@
         const posterUrl = params.get('poster') || '';
 
         // Elementos del DOM
-        const videoPlayer = document.getElementById('video-player');
-        const adContainer = document.getElementById('ad-container');
-
-        // Configuración del reproductor
-        videoPlayer.src = videoUrl;
+        const playerElement = document.getElementById('player');
+        playerElement.src = videoUrl;
         if (posterUrl) {
-            videoPlayer.poster = posterUrl;
+            playerElement.poster = posterUrl;
         }
 
-        // Inicializar Google IMA SDK
+        // Inicializar Plyr
+        const player = new Plyr('#player', {
+            controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+        });
+
+        // Configuración de Google IMA SDK
         let adsLoader;
         let adsManager;
 
         function initIMA() {
             // Crear AdsLoader
-            adsLoader = new google.ima.AdsLoader(adContainer);
+            adsLoader = new google.ima.AdsLoader(playerElement);
 
             // Escuchar eventos de anuncios
             adsLoader.addEventListener(
@@ -94,7 +84,7 @@
 
         function onAdsManagerLoaded(adsManagerLoadedEvent) {
             // Inicializar AdsManager
-            adsManager = adsManagerLoadedEvent.getAdsManager(videoPlayer);
+            adsManager = adsManagerLoadedEvent.getAdsManager(playerElement);
 
             // Escuchar eventos del AdsManager
             adsManager.addEventListener(
@@ -125,20 +115,20 @@
         }
 
         function onContentPauseRequested() {
-            videoPlayer.pause();
+            player.pause();
         }
 
         function onContentResumeRequested() {
-            videoPlayer.play();
+            player.play();
         }
 
         // Inicializar el reproductor
-        videoPlayer.addEventListener('loadedmetadata', () => {
+        player.on('ready', () => {
             initIMA();
         });
 
         // Mostrar error si el video no carga
-        videoPlayer.addEventListener('error', () => {
+        player.on('error', () => {
             const errorDiv = document.createElement('div');
             errorDiv.style.color = 'white';
             errorDiv.style.textAlign = 'center';
