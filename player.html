@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -28,11 +28,11 @@
         </p>
     </video>
 
-    <!-- Scripts necesarios -->
+    <!-- Scripts en orden correcto -->
     <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
     <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.8.0/videojs.ima.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-ima@1.11.0/dist/videojs.ima.min.js"></script>
 
     <script>
         // Obtener parámetros de la URL
@@ -55,17 +55,30 @@
         // Configurar anuncios VAST
         player.ima({
             adTagUrl: vastUrl,
-            debug: true
+            debug: true,
+            showControlsForAds: true
         });
 
-        // Mostrar error si el video no carga
+        // Inicialización del servicio de anuncios
+        player.ima.initializeAdService();
+        player.ima.requestAds();
+
+        // Manejo de errores
         player.on('error', () => {
             const errorDiv = document.createElement('div');
             errorDiv.style.color = 'white';
+            errorDiv.style.backgroundColor = 'red';
+            errorDiv.style.padding = '20px';
             errorDiv.style.textAlign = 'center';
             errorDiv.style.fontSize = '1.5em';
             errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
             document.body.appendChild(errorDiv);
+        });
+
+        // Manejo específico de errores de anuncios
+        player.on('aderror', (e) => {
+            console.error('Error de anuncio:', e);
+            player.ima.requestAds(); // Intentar cargar nuevamente
         });
     </script>
 </body>
