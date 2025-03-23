@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reproductor Video.js con Anuncios VAST</title>
-    <!-- Estilos de Video.js -->
     <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.css" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -28,57 +26,58 @@
         </p>
     </video>
 
-    <!-- Scripts en orden correcto -->
+    <!-- ORDEN CORRECTO DE SCRIPTS -->
     <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
-    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/videojs-ima@1.11.0/dist/videojs.ima.min.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.min.js"></script>
 
     <script>
-        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
         const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
 
-        // Inicializar Video.js
+        // Inicializar el reproductor primero
         const player = videojs('myPlayer', {
             controls: true,
             poster: posterUrl,
-            preload: 'auto',
+            fluid: true,
             sources: [{
                 src: videoUrl,
                 type: 'video/mp4'
             }]
         });
 
-        // Configurar anuncios VAST
-        player.ima({
-            adTagUrl: vastUrl,
-            debug: true,
-            showControlsForAds: true
+        // Esperar a que el reproductor esté listo
+        player.ready(() => {
+            // Inicializar el plugin IMA
+            player.ima({
+                adTagUrl: vastUrl,
+                debug: true,
+                autoPlayAdBreaks: true
+            });
+            
+            // Inicializar el servicio de ads DESPUÉS de cargar todo
+            player.one('loadedmetadata', () => {
+                try {
+                    player.ima.initializeAdService();
+                    player.ima.requestAds();
+                } catch (error) {
+                    console.error('Error inicializando ads:', error);
+                }
+            });
         });
 
-        // Inicialización del servicio de anuncios
-        player.ima.initializeAdService();
-        player.ima.requestAds();
-
-        // Manejo de errores
+        // Manejo de errores mejorado
         player.on('error', () => {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.color = 'white';
-            errorDiv.style.backgroundColor = 'red';
-            errorDiv.style.padding = '20px';
-            errorDiv.style.textAlign = 'center';
-            errorDiv.style.fontSize = '1.5em';
-            errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
-            document.body.appendChild(errorDiv);
+            console.error('Error de video');
+            player.dispose();
         });
 
-        // Manejo específico de errores de anuncios
         player.on('aderror', (e) => {
-            console.error('Error de anuncio:', e);
-            player.ima.requestAds(); // Intentar cargar nuevamente
+            console.error('Error de anuncio:', e.data.AdError);
+            player.ima.requestAds();
         });
     </script>
 </body>
