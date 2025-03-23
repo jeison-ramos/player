@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reproductor Video.js con Anuncios VAST</title>
+    
+    <!-- Estilos de Video.js -->
     <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.css" rel="stylesheet">
+
     <style>
         body {
             margin: 0;
@@ -13,6 +16,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            background-color: black;
         }
         .video-js {
             width: 100% !important;
@@ -27,47 +31,57 @@
         </p>
     </video>
 
+    <!-- Scripts necesarios -->
     <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
-    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.8.0/videojs.ima.min.js"></script>
 
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video') || '';
-        const posterUrl = params.get('poster') || '';
-        const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
+        document.addEventListener("DOMContentLoaded", function() {
+            // Obtener parámetros de la URL
+            const params = new URLSearchParams(window.location.search);
+            const videoUrl = params.get('video') || '';
+            const posterUrl = params.get('poster') || '';
+            const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
 
-        const player = videojs('myPlayer', {
-            controls: true,
-            poster: posterUrl,
-            preload: 'auto',
-            sources: [{
-                src: videoUrl,
-                type: 'video/mp4'
-            }]
-        });
-
-        player.ready(function() {
-            player.ads(); // Importante: inicializar ads antes de ima
-            player.ima({
-                adTagUrl: vastUrl,
-                debug: true
+            // Inicializar Video.js
+            const player = videojs('myPlayer', {
+                controls: true,
+                poster: posterUrl,
+                preload: 'auto',
+                sources: [{
+                    src: videoUrl,
+                    type: 'video/mp4'
+                }]
             });
 
-            // Esperar interacción del usuario para inicializar anuncios
-            player.one('play', function() {
-                player.ima.initializeAdDisplayContainer();
-            });
-        });
+            // Esperar a que Video.js esté listo antes de inicializar los anuncios
+            player.ready(function() {
+                if (typeof player.ads === "function") {
+                    player.ads();
+                    player.ima({
+                        adTagUrl: vastUrl,
+                        debug: true
+                    });
 
-        player.on('error', () => {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.color = 'white';
-            errorDiv.style.textAlign = 'center';
-            errorDiv.style.fontSize = '1.5em';
-            errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
-            document.body.appendChild(errorDiv);
+                    player.one('play', function() {
+                        player.ima.initializeAdDisplayContainer();
+                    });
+                } else {
+                    console.error("Error: videojs-contrib-ads no está disponible.");
+                }
+            });
+
+            // Manejar errores de carga de video
+            player.on('error', () => {
+                const errorDiv = document.createElement('div');
+                errorDiv.style.color = 'white';
+                errorDiv.style.textAlign = 'center';
+                errorDiv.style.fontSize = '1.5em';
+                errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
+                document.body.appendChild(errorDiv);
+            });
         });
     </script>
 </body>
