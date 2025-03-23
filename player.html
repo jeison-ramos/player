@@ -1,80 +1,72 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Fluid Player con Anuncios VAST</title>
-
-    <!-- Estilos para el reproductor -->
+    <title>Reproductor Video.js con Anuncios VAST</title>
+    <!-- Estilos de Video.js -->
+    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.css" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow: hidden;
         }
-        #video-container {
-            width: 80%;
-            max-width: 800px;
-        }
-        video {
-            width: 100%;
-            height: auto;
+        .video-js {
+            width: 100% !important;
+            height: 100vh !important;
         }
     </style>
-    
-    <!-- Cargar Fluid Player -->
-    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
 </head>
 <body>
+    <video id="myPlayer" class="video-js vjs-default-skin" controls preload="auto" playsinline>
+        <p class="vjs-no-js">
+            Para ver este video, habilita JavaScript y usa un navegador que soporte HTML5.
+        </p>
+    </video>
 
-    <div id="video-container">
-        <video id="myPlayer" controls>
-            Tu navegador no soporta la reproducción de videos.
-        </video>
-    </div>
+    <!-- Scripts necesarios -->
+    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.8.0/videojs.ima.min.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Obtener parámetros de la URL
-            const params = new URLSearchParams(window.location.search);
-            const videoUrl = params.get('video') || '';
-            const posterUrl = params.get('poster') || '';
-            const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
+        // Obtener parámetros de la URL
+        const params = new URLSearchParams(window.location.search);
+        const videoUrl = params.get('video') || '';
+        const posterUrl = params.get('poster') || '';
+        const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
 
-            // Seleccionar el video
-            const videoElement = document.getElementById('myPlayer');
+        // Inicializar Video.js
+        const player = videojs('myPlayer', {
+            controls: true,
+            poster: posterUrl,
+            preload: 'auto',
+            sources: [{
+                src: videoUrl,
+                type: 'video/mp4'
+            }]
+        });
 
-            // Configurar el video
-            if (videoUrl) {
-                videoElement.src = videoUrl;
-            }
-            if (posterUrl) {
-                videoElement.poster = posterUrl;
-            }
+        // Configurar anuncios VAST
+        player.ima({
+            adTagUrl: vastUrl,
+            debug: true
+        });
 
-            // Inicializar Fluid Player con anuncios VAST
-            fluidPlayer('myPlayer', {
-                layoutControls: {
-                    primaryColor: "#00adef",
-                    posterImage: posterUrl,
-                    fillToContainer: true
-                },
-                vastOptions: {
-                    adList: [{
-                        roll: "pre",
-                        vastTag: vastUrl
-                    }],
-                    adCTAText: "Publicidad",
-                    skipButtonCaption: "Saltar anuncio"
-                }
-            });
+        // Mostrar error si el video no carga
+        player.on('error', () => {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.color = 'white';
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.fontSize = '1.5em';
+            errorDiv.textContent = 'Error al cargar el video. Verifica la URL.';
+            document.body.appendChild(errorDiv);
         });
     </script>
-
 </body>
 </html>
