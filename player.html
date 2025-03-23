@@ -3,70 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor con Anuncios VAST</title>
-    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
+    <title>Reproductor HTML5 con VAST</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; }
-        .video-js { width: 100vw !important; height: 100vh !important; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+        }
+        #videoContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #videoElement {
+            width: 100%;
+            height: 100%;
+        }
+        #adContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <video id="myPlayer" class="video-js vjs-default-skin" playsinline>
-        <p class="vjs-no-js">Habilita JavaScript para ver el video.</p>
-    </video>
+    <div id="videoContainer">
+        <video id="videoElement" controls playsinline>
+            <source src="" type="video/mp4">
+        </video>
+        <div id="adContainer"></div>
+    </div>
 
-    <!-- Orden CRÍTICO de scripts -->
-    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
+    <!-- IMA SDK -->
     <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/videojs-ima@1.11.0/dist/videojs.ima.min.js"></script>
 
     <script>
-        const player = videojs('myPlayer', {
-            controls: true,
-            preload: 'auto',
-            fluid: true,
-            sources: [{
-                src: new URLSearchParams(window.location.search).get('video') || '',
-                type: 'video/mp4'
-            }],
-            poster: new URLSearchParams(window.location.search).get('poster') || ''
-        });
+        // Configuración
+        const params = new URLSearchParams(window.location.search);
+        const videoUrl = params.get('video') || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
 
-        // Inicialización AD-SYNC
-        player.ready(() => {
-            // 1. Registrar contrib-ads manualmente
-            if(typeof videojs.getPlugin('ads') === 'undefined') {
-                videojs.registerPlugin('ads', videojsContribAds);
+        // Elementos
+        const videoElement = document.getElementById('videoElement');
+        const adContainer = document.getElementById('adContainer');
+        
+        // Inicializar IMA
+        const initIMA = () => {
+            const adsLoader = new google.ima.AdsLoader(adContainer);
+            const adsManager;
+            
+            // Configurar eventos
+            adsLoader.addEventListener(google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED, onAdsManagerLoaded);
+            adsLoader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+
+            // Solicitar ads
+            const adsRequest = new google.ima.AdsRequest();
+            adsRequest.adTagUrl = vastUrl;
+            adsRequest.linearAdSlotWidth = videoElement.offsetWidth;
+            adsRequest.linearAdSlotHeight = videoElement.offsetHeight;
+            adsLoader.requestAds(adsRequest);
+
+            function onAdsManagerLoaded(event) {
+                adsManager = event.getAdsManager(videoElement);
+                adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
+                adsManager.init(640, 360, google.ima.ViewMode.NORMAL);
+                adsManager.start();
             }
 
-            // 2. Configurar IMA después de ads
-            player.ima({
-                adTagUrl: new URLSearchParams(window.location.search).get('vast') || 'TU_URL_VAST',
-                debug: true,
-                timeout: 8000
+            function onAdError(error) {
+                console.error('Error de anuncio:', error.getError());
+                adContainer.style.display = 'none';
+                videoElement.play();
+            }
+        };
+
+        // Cargar video principal
+        videoElement.src = videoUrl;
+        videoElement.load();
+        
+        // Iniciar todo cuando el video esté listo
+        videoElement.addEventListener('loadedmetadata', () => {
+            initIMA();
+            videoElement.play().catch(error => {
+                console.error('Error de autoplay:', error);
             });
-
-            // 3. Inicialización retrasada
-            setTimeout(() => {
-                try {
-                    player.ima.initializeAdService();
-                    player.ima.requestAds();
-                } catch(error) {
-                    console.error('Falló inicialización IMA:', error);
-                    player.play(); // Continuar sin ads
-                }
-            }, 500);
         });
 
-        // Control de errores robusto
-        player.on(['error', 'aderror'], (e) => {
-            console.error(e.type, e.error || e);
-            if(e.type === 'aderror') {
-                player.ima.requestAds(); // Reintentar
-            } else {
-                player.dispose();
-            }
+        // Manejar errores de video
+        videoElement.addEventListener('error', () => {
+            console.error('Error de video:', videoElement.error);
         });
     </script>
 </body>
