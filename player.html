@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -18,6 +18,10 @@
         .video-js {
             width: 100% !important;
             height: 100vh !important;
+        }
+        .vjs-skip-opening {
+            float: right;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -40,6 +44,7 @@
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
         const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
+        const skipTime = parseInt(params.get('skipTime')) || 90; // Tiempo para saltar el opening (90s por defecto)
 
         // Inicializar Video.js
         const player = videojs('myPlayer', {
@@ -52,10 +57,38 @@
             }]
         });
 
+        // Crear botón personalizado para saltar opening
+        const SkipOpeningButton = videojs.extend(videojs.getComponent('Button'), {
+            constructor: function() {
+                videojs.getComponent('Button').apply(this, arguments);
+                this.addClass('vjs-skip-opening');
+                this.controlText('Saltar Opening');
+            },
+            handleClick: function() {
+                player.currentTime(skipTime);
+                player.play();
+                this.hide();
+            }
+        });
+
+        // Registrar el nuevo componente
+        videojs.registerComponent('SkipOpeningButton', SkipOpeningButton);
+        player.getChild('controlBar').addChild('SkipOpeningButton', {}, 3); // Posición 3 en la barra de control
+
         // Configurar anuncios VAST
         player.ima({
             adTagUrl: vastUrl,
             debug: true
+        });
+
+        // Mostrar/ocultar botón según tiempo actual
+        player.on('timeupdate', () => {
+            const skipButton = player.getChild('controlBar').getChild('SkipOpeningButton');
+            if (player.currentTime() < skipTime && !player.paused()) {
+                skipButton.show();
+            } else {
+                skipButton.hide();
+            }
         });
 
         // Mostrar error si el video no carga
