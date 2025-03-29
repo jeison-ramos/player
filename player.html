@@ -3,105 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Skip Automático</title>
-    <link href="https://vjs.zencdn.net/7.20.1/video-js.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.css" rel="stylesheet">
+    <title>Reproductor Fluid Player con Anuncios VAST</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fluidplayer/3.0.2/fluidplayer.min.css">
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; }
-        .video-js { width: 100vw; height: 100vh; }
-        .vjs-skip-opening {
-            position: absolute;
-            right: 15px;
-            bottom: 60px;
-            background: rgba(0,0,0,0.6);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            transition: opacity 0.3s;
-            z-index: 10;
-        }
-        @media (max-width: 600px) {
-            .vjs-skip-opening { bottom: 80px; font-size: 12px; padding: 6px 12px; }
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        video { width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
-    <video id="myPlayer" class="video-js vjs-default-skin" controls playsinline>
-        <p class="vjs-no-js">Habilita JavaScript y HTML5 para ver este video.</p>
+    <video id="myPlayer" controls>
+        <source id="videoSource" src="" type="video/mp4">
+        Tu navegador no soporta la reproducción de video.
     </video>
-
-    <script src="https://vjs.zencdn.net/7.20.1/video.min.js"></script>
-    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.6.6/videojs-contrib-ads.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.8.0/videojs.ima.min.js"></script>
-
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fluidplayer/3.0.2/fluidplayer.min.js"></script>
     <script>
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || '';
         const posterUrl = params.get('poster') || '';
-        const vastUrl = params.get('vast') || 'https://thusizulu.com/dOmJFdzyd.GwNqvRZEGDUF/zegm/9luEZwUklJkXP/TsY/xsNczMMI3uMJz/A/tjNSj/ER3/MbzHc-zcMCQY';
+        const vastUrl = "https://thusizulu.com/dzmFFvz/d.GQNrvEZwGPUQ/MejmE9Bu/ZXU/lEkNPnT/Ygx/NBzdM/3OMOz-AotKNkj-Eq3sMLzOcczgMLQm";
         
-        const player = videojs('myPlayer', {
-            html5: { hls: { overrideNative: true } },
-            controls: true,
-            poster: posterUrl,
-            sources: [{ src: videoUrl, type: 'application/x-mpegURL' }]
-        });
-
-        // Botón de salto integrado con detección automática
-        const skipButton = document.createElement('button');
-        skipButton.className = 'vjs-skip-opening vjs-control';
-        skipButton.innerHTML = '<span aria-hidden="true">Saltar Opening</span>';
-        skipButton.style.display = 'none';
-
-        player.el().querySelector('.vjs-control-bar').appendChild(skipButton);
-
-        // Lógica de detección mejorada
-        let openingDuration = 0;
-        player.ready(() => {
-            player.on('loadedmetadata', () => {
-                // Detectar automaticamente duración del opening (ej: 90s)
-                openingDuration = 90; // Esto debería venir de tu lógica de detección
-                updateSkipButton();
-            });
-
-            player.on('timeupdate', updateSkipButton);
-        });
-
-        function updateSkipButton() {
-            if (player.currentTime() < openingDuration && 
-                !player.paused() && 
-                !player.ima.isAdPlaying()) {
-                
-                skipButton.style.display = 'block';
-                skipButton.disabled = false;
-            } else {
-                skipButton.style.display = 'none';
+        document.getElementById('videoSource').src = videoUrl;
+        document.getElementById('myPlayer').poster = posterUrl;
+        
+        const player = fluidPlayer('myPlayer', {
+            vastOptions: {
+                adList: [{ roll: 'pre', vastTag: vastUrl }]
             }
-        }
-
-        skipButton.addEventListener('click', () => {
-            if (player.currentTime() < openingDuration) {
-                player.currentTime(openingDuration);
-                player.play();
-                skipButton.style.display = 'none';
-            }
-        });
-
-        // Configurar anuncios
-        player.ima({
-            adTagUrl: vastUrl,
-            debug: true,
-            showControlsForJSAds: true
-        });
-
-        // Manejo de errores
-        player.on('error', () => {
-            const errorDiv = document.createElement('div');
-            errorDiv.style = 'color: #fff; background: #000; padding: 20px; text-align: center;';
-            errorDiv.textContent = 'Error al cargar el contenido';
-            document.body.insertBefore(errorDiv, player.el());
         });
     </script>
 </body>
