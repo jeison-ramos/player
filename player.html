@@ -12,7 +12,6 @@
 </head>
 <body>
     <video id="myPlayer" controls>
-        <source id="videoSource" src="" type="video/mp4">
         Tu navegador no soporta la reproducción de video.
     </video>
     
@@ -23,14 +22,22 @@
         const posterUrl = params.get('poster') || '';
         const vastUrl = "https://thusizulu.com/dzmFFvz/d.GQNrvEZwGPUQ/MejmE9Bu/ZXU/lEkNPnT/Ygx/NBzdM/3OMOz-AotKNkj-Eq3sMLzOcczgMLQm";
         
-        document.getElementById('videoSource').src = videoUrl;
-        document.getElementById('myPlayer').poster = posterUrl;
-        
-        const player = fluidPlayer('myPlayer', {
-            vastOptions: {
-                adList: [{ roll: 'pre', vastTag: vastUrl }]
-            }
-        });
+        if (videoUrl) {
+            const videoElement = document.getElementById('myPlayer');
+            const source = document.createElement('source');
+            source.src = videoUrl;
+            source.type = videoUrl.includes(".m3u8") ? "application/x-mpegURL" : "video/mp4";
+            videoElement.appendChild(source);
+            videoElement.poster = posterUrl;
+            
+            const player = fluidPlayer('myPlayer', {
+                vastOptions: {
+                    adList: [{ roll: 'pre', vastTag: vastUrl }]
+                }
+            });
+        } else {
+            console.error("No se encontró una URL de video válida.");
+        }
     </script>
 </body>
 </html>
