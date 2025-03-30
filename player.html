@@ -1,20 +1,18 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reproductor Fluid Player</title>
+    <title>Reproductor Fluid Player con VAST</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Incluye Fluid Player -->
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita scrollbars innecesarios */
+            overflow: hidden;
         }
 
         #video-container {
@@ -23,7 +21,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
+            background-color: #000;
         }
 
         #video-player {
@@ -31,16 +29,15 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain; /* Mantiene la relación de aspecto y evita recortes */
-            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
+            object-fit: contain;
+            aspect-ratio: 16 / 9;
         }
 
-        /* Estilos específicos para dispositivos móviles en modo vertical */
         @media screen and (max-aspect-ratio: 1/1) {
             #video-player {
                 width: 100%;
                 height: auto;
-                object-fit: contain; /* Asegura que el video se ajuste sin recortes */
+                object-fit: contain;
             }
         }
     </style>
@@ -53,44 +50,43 @@
     </div>
 
     <script>
-        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || 'https://www.example.com/default-video.mp4';
         const posterUrl = params.get('poster') || '';
 
-        // Configurar el reproductor
-        fluidPlayer(
-            'video-player', {
-                layoutControls: {
-                    primaryColor: "#FF6600",
-                    posterImage: posterUrl || null, // Evitar errores si no hay portada
-                    fillToContainer: true, // Hace que el reproductor llene el contenedor
-                    autoPlay: false, // Desactiva la reproducción automática
-                    allowTheatre: true, // Permite modo teatro
-                    allowFullScreen: true, // Permite pantalla completa
-                    controlBar: {
-                        autoHide: true, // Oculta automáticamente los controles cuando no se usan
-                        autoHideTimeout: 3 // Tiempo en segundos antes de ocultar los controles
-                    }
-                }
-            }
-        );
+        const vastUrl = 'https://thusizulu.com/dzmFFvz/d.GQNrvEZwGPUQ/MejmE9Bu/ZXU/lEkNPnT/Ygx/NBzdM/3OMOz-AotKNkj-Eq3sMLzOcczgMLQm'; // URL del anuncio VAST directo
 
-        // Establecer la fuente del video
+        const player = fluidPlayer('video-player', {
+            layoutControls: {
+                primaryColor: "#FF6600",
+                posterImage: posterUrl || null,
+                fillToContainer: true,
+                autoPlay: false,
+                allowTheatre: true,
+                allowFullScreen: true,
+                controlBar: {
+                    autoHide: true,
+                    autoHideTimeout: 3
+                }
+            },
+            vastOptions: {
+                adList: [{
+                    roll: 'pre',
+                    vastTag: vastUrl
+                }]
+            }
+        });
+
         const videoElement = document.getElementById('video-player');
         videoElement.src = videoUrl;
 
-        // Manejar errores de carga
         videoElement.onerror = () => {
-            const container = document.getElementById('video-container');
-            container.innerHTML = `
+            document.getElementById('video-container').innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
                     Error al cargar el video. Por favor, verifica la URL.
                 </div>
             `;
         };
     </script>
-
-      
-   </body>
+</body>
 </html>
