@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Banner Promocional</title>
+    <title>Reproductor Video.js con Anuncios VAST</title>
     <!-- Incluye Video.js -->
     <link href="https://vjs.zencdn.net/8.11.2/video-js.css" rel="stylesheet">
     <script src="https://vjs.zencdn.net/8.11.2/video.min.js"></script>
+    <!-- Incluye Google IMA SDK -->
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <!-- Incluye videojs-ima -->
+    <script src="https://cdn.jsdelivr.net/npm/videojs-ima/dist/videojs.ima.js"></script>
     <style>
         /* Estilos generales */
         body, html {
@@ -33,25 +37,6 @@
             object-fit: contain;
             aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
         }
-
-        /* Estilo del mensaje promocional */
-        .promo-banner {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: center;
-            z-index: 10;
-        }
-
-        .promo-banner:hover {
-            background-color: rgba(255, 102, 0, 0.9); /* Cambia el color al pasar el mouse */
-        }
     </style>
 </head>
 <body>
@@ -61,19 +46,13 @@
             <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
             Tu navegador no soporta el elemento de video.
         </video>
-
-        <!-- Mensaje promocional -->
-        <div id="promo-banner" class="promo-banner" style="display: none;">
-            Patrocinado por <strong>NombreEmpresa</strong><br>
-            ¡Haz clic aquí!
-        </div>
     </div>
 
     <script>
         // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video') || 'https://www.w3schools.com/html/mov_bbb.mp4';
-        const promoLink = params.get('promo') || 'https://www.example.com'; // Enlace patrocinado
+        const vastUrl = params.get('vast') || 'https://thusizulu.com/dhm.FXz/doG/NUvNZuGUUD/EeMm_9lu/ZIUBlOkyPETbYgx/N_zvM/3kMPzGAjtPNijeE/3FMkz/cqz_MpScZVsdadWt1MpZd/DJ0axi';
 
         // Configurar el reproductor Video.js
         const player = videojs('video-player', {
@@ -88,23 +67,25 @@
             }
         });
 
-        // Establecer la fuente del video
-        player.src({ src: videoUrl, type: 'video/mp4' });
-
-        // Mostrar el mensaje promocional después de 5 segundos de reproducción
-        const promoBanner = document.getElementById('promo-banner');
-        player.on('timeupdate', () => {
-            if (player.currentTime() >= 5 && promoBanner.style.display === 'none') {
-                promoBanner.style.display = 'block';
+        // Configurar el plugin IMA para anuncios VAST
+        player.ima({
+            adTagUrl: vastUrl, // URL del archivo VAST
+            debug: true, // Habilita el modo de depuración para ver mensajes en la consola
+            showControlsForJSAds: true, // Muestra los controles durante los anuncios
+            prerollTimeout: 5000, // Tiempo máximo para cargar el pre-roll (en milisegundos)
+            adLabel: "Publicidad", // Texto que aparece durante los anuncios
+            adsManagerLoadedCallback: function () {
+                console.log("Anuncio cargado correctamente.");
+            },
+            adsErrorCallback: function (error) {
+                console.error("Error al cargar el anuncio:", error);
             }
         });
 
-        // Redirigir al hacer clic en el banner
-        promoBanner.addEventListener('click', () => {
-            window.open(promoLink, '_blank'); // Abrir enlace en una nueva pestaña
-        });
+        // Establecer la fuente del video
+        player.src({ src: videoUrl, type: 'video/mp4' });
 
-        // Manejar errores de carga
+        // Manejar errores de carga del video
         player.on('error', () => {
             const container = document.getElementById('video-container');
             container.innerHTML = `
