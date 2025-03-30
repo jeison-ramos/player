@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js</title>
+    <title>Reproductor Video.js con Aviso Bloqueante</title>
     <!-- Incluye Video.js -->
     <link href="https://vjs.zencdn.net/8.11.2/video-js.css" rel="stylesheet">
     <script src="https://vjs.zencdn.net/8.11.2/video.min.js"></script>
@@ -33,6 +33,48 @@
             object-fit: contain;
             aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
         }
+
+        /* Estilo del mensaje promocional */
+        .promo-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .promo-banner h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .promo-banner p {
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .promo-banner button {
+            background-color: #FF6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .promo-banner button:hover {
+            background-color: #FFA500;
+        }
     </style>
 </head>
 <body>
@@ -41,12 +83,20 @@
         <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360">
             Tu navegador no soporta el elemento de video.
         </video>
+
+        <!-- Mensaje promocional bloqueante -->
+        <div id="promo-banner" class="promo-banner">
+            <h2>¡Atención!</h2>
+            <p>Este contenido está patrocinado por <strong>NombreEmpresa</strong>. Haz clic para continuar.</p>
+            <button id="close-banner">Continuar</button>
+        </div>
     </div>
 
     <script>
-        // Obtener la URL del video desde los parámetros de la URL
+        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video'); // URL del video proporcionada por el usuario
+        const promoLink = params.get('promo') || 'https://www.example.com'; // Enlace patrocinado
 
         // Configurar el reproductor Video.js
         const player = videojs('video-player', {
@@ -73,6 +123,20 @@
                 </div>
             `;
         }
+
+        // Mostrar el mensaje promocional al inicio
+        const promoBanner = document.getElementById('promo-banner');
+        const closeButton = document.getElementById('close-banner');
+
+        // Detener la reproducción inicialmente
+        player.pause();
+
+        // Cerrar el banner y redirigir al hacer clic
+        closeButton.addEventListener('click', () => {
+            promoBanner.style.display = 'none'; // Ocultar el banner
+            window.open(promoLink, '_blank'); // Redirigir al enlace patrocinado
+            player.play(); // Continuar la reproducción del video
+        });
 
         // Manejar errores de carga del video
         player.on('error', () => {
