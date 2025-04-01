@@ -1,64 +1,151 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fluid Player con VAST</title>
-    <!-- Fluid Player CSS -->
-    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
+    <title>Reproductor Video.js con Aviso Bloqueante</title>
+    <!-- Incluye Video.js -->
+    <link href="https://vjs.zencdn.net/8.11.2/video-js.css" rel="stylesheet">
+    <script src="https://vjs.zencdn.net/8.11.2/video.min.js"></script>
+    <style>
+        /* Estilos generales */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Evita scrollbars innecesarios */
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
+        }
+
+        .video-js {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
+        }
+
+        /* Estilo del mensaje promocional */
+        .promo-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .promo-banner h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .promo-banner p {
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .promo-banner button {
+            background-color: #FF6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .promo-banner button:hover {
+            background-color: #FFA500;
+        }
+    </style>
 </head>
 <body>
     <div id="video-container">
-        <video id="my-fluid-player">
-            <source src="https://cdn.jwplayer.com/v2/media/123acb4e" type="video/mp4">
+        <!-- Reproductor de video -->
+        <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360">
+            Tu navegador no soporta el elemento de video.
         </video>
+
+        <!-- Mensaje promocional bloqueante -->
+        <div id="promo-banner" class="promo-banner">
+            <h2>¡Atención!</h2>
+            <p>Este contenido está patrocinado por <strong>NombreEmpresa</strong>. Haz clic para continuar.</p>
+            <button id="close-banner">Continuar</button>
+        </div>
     </div>
 
-    <!-- Fluid Player JS -->
-    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <script>
-        fluidPlayer(
-            'my-fluid-player', // ID del elemento video
-            {
-                layoutControls: {
-                    primaryColor: "#28B8ED",
-                    posterImage: "https://www.example.com/poster.jpg" // URL de la imagen de portada
-                },
-                vastOptions: {
-                    adList: [
-                        // Pre-roll
-                        {
-                            roll: "preRoll",
-                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
-                        },
-                        // Mid-roll a los 10 segundos
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
-                            timer: 10
-                        },
-                        // Mid-roll a los 15 segundos
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
-                            timer: 15
-                        },
-                        // Mid-roll al 25% (requiere duración conocida del video)
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
-                            timer: "25%"
-                        },
-                        // Post-roll
-                        {
-                            roll: "postRoll",
-                            vastTag: "https://www.domain.com/adtag-post-roll.xml"
-                        }
-                    ],
-                    adscheduleid: "Az87bY12" // ID de programación (opcional)
+        // Obtener parámetros de la URL
+        const params = new URLSearchParams(window.location.search);
+        const videoUrl = params.get('video'); // URL del video proporcionada por el usuario
+        const promoLink = params.get('promo') || 'https://www.example.com'; // Enlace patrocinado
+
+        // Configurar el reproductor Video.js
+        const player = videojs('video-player', {
+            controls: true,
+            autoplay: false,
+            preload: 'auto',
+            fluid: true, // Hace que el reproductor sea responsive
+            controlBar: {
+                volumePanel: {
+                    inline: false
                 }
             }
-        );
+        });
+
+        // Verificar si se proporcionó una URL de video
+        if (videoUrl) {
+            player.src({ src: videoUrl, type: 'video/mp4' }); // Establecer la fuente del video
+        } else {
+            // Mostrar mensaje de error si no se proporciona una URL
+            const container = document.getElementById('video-container');
+            container.innerHTML = `
+                <div style="color: white; text-align: center; font-size: 1.5em;">
+                    Error: No se proporcionó una URL de video. Usa el parámetro "video" en la URL.
+                </div>
+            `;
+        }
+
+        // Mostrar el mensaje promocional al inicio
+        const promoBanner = document.getElementById('promo-banner');
+        const closeButton = document.getElementById('close-banner');
+
+        // Detener la reproducción inicialmente
+        player.pause();
+
+        // Cerrar el banner y redirigir al hacer clic
+        closeButton.addEventListener('click', () => {
+            promoBanner.style.display = 'none'; // Ocultar el banner
+            window.open(promoLink, '_blank'); // Redirigir al enlace patrocinado
+            player.play(); // Continuar la reproducción del video
+        });
+
+        // Manejar errores de carga del video
+        player.on('error', () => {
+            const container = document.getElementById('video-container');
+            container.innerHTML = `
+                <div style="color: white; text-align: center; font-size: 1.5em;">
+                    Error al cargar el video. Por favor, verifica la URL.
+                </div>
+            `;
+        });
     </script>
 </body>
 </html>
