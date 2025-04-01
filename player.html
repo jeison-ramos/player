@@ -1,48 +1,52 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reproductor Fluid Player con Publicidad VAST</title>
-    <!-- Incluye Fluid Player -->
     <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita scrollbars innecesarios */
+            overflow: hidden;
+            background-color: #000;
         }
 
         #video-container {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
     <div id="video-container">
-        <!-- Contenedor del reproductor Fluid Player -->
-        <video id="video-player">
+        <video id="video-player" playsinline>
             Tu navegador no soporta el elemento de video.
         </video>
     </div>
 
     <script>
-        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video'); // URL del video proporcionada por el usuario
+        const videoUrl = params.get('video');
 
-        // Configurar el reproductor Fluid Player con publicidad VAST
         if (videoUrl) {
-            fluidPlayer("video-player", {
+            const player = fluidPlayer("video-player", {
                 layoutControls: {
                     primaryColor: "#FF6600",
                     playButtonShowing: true,
@@ -56,57 +60,49 @@
                 vastOptions: {
                     adList: [
                         {
-                            roll: "preRoll", // Anuncio antes del video
+                            roll: "preRoll",
                             vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
                         },
                         {
-                            roll: "midRoll", // Anuncio a los 10 segundos
+                            roll: "midRoll",
                             vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
                             timer: 10
                         },
                         {
-                            roll: "midRoll", // Anuncio a los 15 segundos
+                            roll: "midRoll",
                             vastTag: "https://www.domain.com/adtag-mid-roll2.xml",
                             timer: 15
                         },
                         {
-                            roll: "midRoll", // Anuncio al 25% del video
+                            roll: "midRoll",
                             vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
                             timer: "25%"
                         },
                         {
-                            roll: "postRoll", // Anuncio después del video
+                            roll: "postRoll",
                             vastTag: "https://www.domain.com/adtag-post-roll.xml"
                         }
                     ],
-                    skipButtonCaption: "Saltar en [[seconds]] segundos", // Texto del botón de salto
-                    skipButtonClickCaption: "Saltar ahora", // Texto al hacer clic en el botón de salto
-                    adText: "Publicidad", // Texto mostrado durante los anuncios
-                    adCTAText: "Más información" // Texto del botón CTA
+                    skipButtonCaption: "Saltar en [[seconds]] segundos",
+                    skipButtonClickCaption: "Saltar ahora",
+                    adText: "Publicidad",
+                    adCTAText: "Más información"
                 }
             });
 
-            // Establecer la fuente del video
-            document.querySelector("#video-player").setAttribute("src", videoUrl);
+            document.getElementById("video-player").setAttribute("src", videoUrl);
+            
+            // Evento para reanudar el video tras la publicidad
+            player.on('adEnded', function() {
+                player.play();
+            });
         } else {
-            // Mostrar mensaje de error si no se proporciona una URL
-            const container = document.getElementById('video-container');
-            container.innerHTML = `
+            document.getElementById('video-container').innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
                     Error: No se proporcionó una URL de video. Usa el parámetro "video" en la URL.
                 </div>
             `;
         }
-
-        // Manejar errores de carga del video
-        document.getElementById('video-player').addEventListener('error', () => {
-            const container = document.getElementById('video-container');
-            container.innerHTML = `
-                <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error al cargar el video. Por favor, verifica la URL.
-                </div>
-            `;
-        });
     </script>
 </body>
 </html>
