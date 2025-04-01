@@ -3,144 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Video.js con Aviso Bloqueante</title>
-    <!-- Incluye Video.js -->
-    <link href="https://vjs.zencdn.net/8.11.2/video-js.css" rel="stylesheet">
-    <script src="https://vjs.zencdn.net/8.11.2/video.min.js"></script>
+    <title>Reproductor JW Player</title>
     <style>
-        /* Estilos generales */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Evita scrollbars innecesarios */
+            overflow: hidden;
+            background-color: #000;
         }
-
-        #video-container {
-            position: relative;
+        #myElement {
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000; /* Fondo negro para mejorar la experiencia visual */
-        }
-
-        .video-js {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            aspect-ratio: 16 / 9; /* Relación de aspecto común para videos */
-        }
-
-        /* Estilo del mensaje promocional */
-        .promo-banner {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            z-index: 10;
-            cursor: pointer;
-        }
-
-        .promo-banner h2 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-
-        .promo-banner p {
-            font-size: 1em;
-            margin-bottom: 20px;
-        }
-
-        .promo-banner button {
-            background-color: #FF6600;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1em;
-            cursor: pointer;
-        }
-
-        .promo-banner button:hover {
-            background-color: #FFA500;
         }
     </style>
+    <script src="https://cdn.jwplayer.com/libraries/TU_ID_DE_JWPLAYER.js"></script>
 </head>
 <body>
-    <div id="video-container">
-        <!-- Reproductor de video -->
-        <video id="video-player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360">
-            Tu navegador no soporta el elemento de video.
-        </video>
-
-        <!-- Mensaje promocional bloqueante -->
-        <div id="promo-banner" class="promo-banner">
-            <h2>¡Atención!</h2>
-            <p>Este contenido está patrocinado por <strong>NombreEmpresa</strong>. Haz clic para continuar.</p>
-            <button id="close-banner">Continuar</button>
-        </div>
-    </div>
+    <div id="myElement"></div>
 
     <script>
-        // Obtener parámetros de la URL
         const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video'); // URL del video proporcionada por el usuario
-        const promoLink = params.get('promo') || 'https://www.example.com'; // Enlace patrocinado
+        const videoUrl = params.get('video') || "https://www.example.com/default-video.mp4";
+        const posterUrl = params.get('poster') || "";
 
-        // Configurar el reproductor Video.js
-        const player = videojs('video-player', {
-            controls: true,
-            autoplay: false,
-            preload: 'auto',
-            fluid: true, // Hace que el reproductor sea responsive
-            controlBar: {
-                volumePanel: {
-                    inline: false
+        jwplayer("myElement").setup({
+            "playlist": [
+                {
+                    "file": videoUrl,
+                    "image": posterUrl,
+                    "title": "Mi Video",
+                    "description": "Este es un video de ejemplo."
                 }
-            }
+            ],
+            "advertising": {
+                "client": "vast",
+                "adscheduleid": "Az87bY12",
+                "schedule": [
+                    {
+                        "offset": "pre",
+                        "tag": "https://www.domain.com/adtag.xml"
+                    },
+                    {
+                        "offset": 10,
+                        "tag": "https://www.domain.com/adtag-mid-roll1.xml"
+                    },
+                    {
+                        "offset": "00:00:15:000",
+                        "tag": "https://www.domain.com/adtag-mid-roll2.xml"
+                    },
+                    {
+                        "offset": "25%",
+                        "tag": "https://www.domain.com/adtag-mid-roll3.xml"
+                    },
+                    {
+                        "offset": "post",
+                        "tag": "https://www.domain.com/adtag-post-roll.xml"
+                    }
+                ]
+            },
+            "width": "100%",
+            "height": "100%",
+            "aspectratio": "16:9",
+            "autostart": false,
+            "controls": true
         });
 
-        // Verificar si se proporcionó una URL de video
-        if (videoUrl) {
-            player.src({ src: videoUrl, type: 'video/mp4' }); // Establecer la fuente del video
-        } else {
-            // Mostrar mensaje de error si no se proporciona una URL
-            const container = document.getElementById('video-container');
-            container.innerHTML = `
-                <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error: No se proporcionó una URL de video. Usa el parámetro "video" en la URL.
-                </div>
-            `;
-        }
-
-        // Mostrar el mensaje promocional al inicio
-        const promoBanner = document.getElementById('promo-banner');
-        const closeButton = document.getElementById('close-banner');
-
-        // Detener la reproducción inicialmente
-        player.pause();
-
-        // Cerrar el banner y redirigir al hacer clic
-        closeButton.addEventListener('click', () => {
-            promoBanner.style.display = 'none'; // Ocultar el banner
-            window.open(promoLink, '_blank'); // Redirigir al enlace patrocinado
-            player.play(); // Continuar la reproducción del video
-        });
-
-        // Manejar errores de carga del video
-        player.on('error', () => {
-            const container = document.getElementById('video-container');
+        jwplayer().on('error', function () {
+            const container = document.getElementById('myElement');
             container.innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
                     Error al cargar el video. Por favor, verifica la URL.
