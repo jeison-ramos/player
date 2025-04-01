@@ -3,55 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor JW Player</title>
-    <script src="https://cdn.jwplayer.com/libraries/ABCdeFG12356SeVenABCdeFG123456SeVen==.js"></script>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-        }
-        #video-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #video-player {
-            width: 80%;
-            max-width: 800px;
-            aspect-ratio: 16 / 9;
-        }
-    </style>
+    <title>Fluid Player con VAST</title>
+    <!-- Fluid Player CSS -->
+    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
 </head>
 <body>
     <div id="video-container">
-        <div id="video-player"></div>
+        <video id="my-fluid-player">
+            <source src="https://cdn.jwplayer.com/v2/media/123acb4e" type="video/mp4">
+        </video>
     </div>
 
+    <!-- Fluid Player JS -->
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const videoUrl = params.get('video');
-        
-        if (videoUrl) {
-            jwplayer("video-player").setup({
-                file: videoUrl,
-                width: "100%",
-                aspectratio: "16:9",
-                controls: true,
-                autostart: false
-            });
-        } else {
-            document.getElementById("video-container").innerHTML = `
-                <div style="color: white; text-align: center; font-size: 1.5em;">
-                    Error: No se proporcionó una URL de video.
-                </div>
-            `;
-        }
+        fluidPlayer(
+            'my-fluid-player', // ID del elemento video
+            {
+                layoutControls: {
+                    primaryColor: "#28B8ED",
+                    posterImage: "https://www.example.com/poster.jpg" // URL de la imagen de portada
+                },
+                vastOptions: {
+                    adList: [
+                        // Pre-roll
+                        {
+                            roll: "preRoll",
+                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
+                        },
+                        // Mid-roll a los 10 segundos
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
+                            timer: 10
+                        },
+                        // Mid-roll a los 15 segundos
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
+                            timer: 15
+                        },
+                        // Mid-roll al 25% (requiere duración conocida del video)
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
+                            timer: "25%"
+                        },
+                        // Post-roll
+                        {
+                            roll: "postRoll",
+                            vastTag: "https://www.domain.com/adtag-post-roll.xml"
+                        }
+                    ],
+                    adscheduleid: "Az87bY12" // ID de programación (opcional)
+                }
+            }
+        );
     </script>
 </body>
 </html>
