@@ -44,8 +44,12 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video');
+        const videoElement = document.getElementById("video-player");
 
         if (videoUrl) {
+            videoElement.src = videoUrl;
+            videoElement.load(); // Cargar el video antes de inicializar el reproductor
+
             const player = fluidPlayer("video-player", {
                 layoutControls: {
                     primaryColor: "#FF6600",
@@ -62,25 +66,6 @@
                         {
                             roll: "preRoll",
                             vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
-                            timer: 10
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://www.domain.com/adtag-mid-roll2.xml",
-                            timer: 15
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
-                            timer: "25%"
-                        },
-                        {
-                            roll: "postRoll",
-                            vastTag: "https://www.domain.com/adtag-post-roll.xml"
                         }
                     ],
                     skipButtonCaption: "Saltar en [[seconds]] segundos",
@@ -90,11 +75,10 @@
                 }
             });
 
-            document.getElementById("video-player").setAttribute("src", videoUrl);
-            
-            // Evento para reanudar el video tras la publicidad
+            // Asegurar que el video se reproduzca tras finalizar el anuncio
             player.on('adEnded', function() {
-                player.play();
+                console.log("Anuncio terminado");
+                videoElement.play();
             });
         } else {
             document.getElementById('video-container').innerHTML = `
