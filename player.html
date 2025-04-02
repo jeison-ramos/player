@@ -36,7 +36,7 @@
 </head>
 <body>
     <div id="video-container">
-        <video id="video-player" playsinline>
+        <video id="video-player" playsinline controls>
             Tu navegador no soporta el elemento de video.
         </video>
     </div>
@@ -62,25 +62,6 @@
                         {
                             roll: "preRoll",
                             vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
-                            timer: 10
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://www.domain.com/adtag-mid-roll2.xml",
-                            timer: 15
-                        },
-                        {
-                            roll: "midRoll",
-                            vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
-                            timer: "25%"
-                        },
-                        {
-                            roll: "postRoll",
-                            vastTag: "https://www.domain.com/adtag-post-roll.xml"
                         }
                     ],
                     skipButtonCaption: "Saltar en [[seconds]] segundos",
@@ -91,10 +72,10 @@
             });
 
             document.getElementById("video-player").setAttribute("src", videoUrl);
-            
+
             // Evento para reanudar el video tras la publicidad
-            player.on('adEnded', function() {
-                player.play();
+            player.on('adFinished', function() {
+                document.getElementById("video-player").play();
             });
         } else {
             document.getElementById('video-container').innerHTML = `
