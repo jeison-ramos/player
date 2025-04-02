@@ -3,135 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reproductor Avanzado con Fluid Player</title>
+    <title>Reproductor Fluid Player con Publicidad VAST</title>
     <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css">
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        * {
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
         }
 
-        body {
-            background: #000;
-            height: 100vh;
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        #container {
-            width: 100%;
-            max-width: 1200px;
-            position: relative;
-        }
-
-        #video-container {
-            width: 100%;
-            height: 0;
-            padding-bottom: 56.25%; /* Relación 16:9 */
-            position: relative;
-        }
-
-        #video-player {
-            position: absolute;
-            top: 0;
-            left: 0;
+        video {
             width: 100%;
             height: 100%;
-        }
-
-        .error-message {
-            color: white;
-            text-align: center;
-            padding: 20px;
-            font-size: 1.2em;
-            display: none;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <div id="video-container">
-            <video id="video-player" playsinline></video>
-        </div>
-        <div id="error-message" class="error-message"></div>
+    <div id="video-container">
+        <video id="video-player" playsinline>
+            Tu navegador no soporta el elemento de video.
+        </video>
     </div>
 
-    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            const videoUrl = params.get('video');
-            const errorDiv = document.getElementById('error-message');
-            
-            if (!videoUrl) {
-                errorDiv.textContent = 'Error: Falta parámetro "video" en la URL. Ejemplo: ?video=URL_DEL_VIDEO';
-                errorDiv.style.display = 'block';
-                return;
-            }
+        const params = new URLSearchParams(window.location.search);
+        const videoUrl = params.get('video');
 
-            try {
-                const player = fluidPlayer('video-player', {
-                    fillToContainer: true,
+        if (videoUrl) {
+            const player = fluidPlayer("video-player", {
+                layoutControls: {
+                    primaryColor: "#FF6600",
+                    playButtonShowing: true,
                     autoPlay: false,
                     mute: false,
-                    responsive: true,
-                    keyboardControl: true,
-                    layoutControls: {
-                        primaryColor: '#ff5722',
-                        playButtonShowing: true,
-                        controlBar: {
-                            autoHide: true,
-                            autoHideTimeout: 3
+                    allowTheatre: true,
+                    controlBar: {
+                        autoHide: true
+                    }
+                },
+                vastOptions: {
+                    adList: [
+                        {
+                            roll: "preRoll",
+                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF"
+                        },
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://thusizulu.com/d.maFqzwdDGyNkvEZrG/UO/Re/md9YuiZMUplokQPVTwYox/NczUM_3LMpzaANtCN/jdEk3mMazec/ztM/SIZis/aGW/1/pZd/D/0kxF",
+                            timer: 10
+                        },
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://www.domain.com/adtag-mid-roll2.xml",
+                            timer: 15
+                        },
+                        {
+                            roll: "midRoll",
+                            vastTag: "https://www.domain.com/adtag-mid-roll3.xml",
+                            timer: "25%"
+                        },
+                        {
+                            roll: "postRoll",
+                            vastTag: "https://www.domain.com/adtag-post-roll.xml"
                         }
-                    },
-                    vastOptions: {
-                        adList: [{
-                            roll: 'preRoll',
-                            vastTag: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_preroll_250x361&sz=640x480&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dskippablelinear&correlator='
-                        }],
-                        skipButtonCaption: 'Saltar en [seconds]s',
-                        adText: 'Publicidad - ',
-                        adCTAText: 'Visitar anunciante'
-                    },
-                    videoFile: videoUrl
-                });
+                    ],
+                    skipButtonCaption: "Saltar en [[seconds]] segundos",
+                    skipButtonClickCaption: "Saltar ahora",
+                    adText: "Publicidad",
+                    adCTAText: "Más información"
+                }
+            });
 
-                // Manejo de eventos
-                player.on('ready', function() {
-                    console.log('Reproductor listo');
-                    document.body.addEventListener('click', function initPlay() {
-                        player.play();
-                        document.body.removeEventListener('click', initPlay);
-                    });
-                });
-
-                player.on('error', function(error) {
-                    console.error('Error:', error);
-                    errorDiv.textContent = `Error: ${error.message}`;
-                    errorDiv.style.display = 'block';
-                });
-
-                player.on('adError', function(error) {
-                    console.warn('Error en anuncio:', error);
-                    player.play();
-                });
-
-                player.on('adSkipped', function() {
-                    player.play();
-                });
-
-                player.on('adEnded', function() {
-                    player.play();
-                    player.refresh();
-                });
-
-            } catch (error) {
-                errorDiv.textContent = `Error inicializando reproductor: ${error.message}`;
-                errorDiv.style.display = 'block';
-            }
-        });
+            document.getElementById("video-player").setAttribute("src", videoUrl);
+            
+            // Evento para reanudar el video tras la publicidad
+            player.on('adEnded', function() {
+                player.play();
+            });
+        } else {
+            document.getElementById('video-container').innerHTML = `
+                <div style="color: white; text-align: center; font-size: 1.5em;">
+                    Error: No se proporcionó una URL de video. Usa el parámetro "video" en la URL.
+                </div>
+            `;
+        }
     </script>
 </body>
 </html>
