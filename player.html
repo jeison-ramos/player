@@ -29,8 +29,8 @@
 
         video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            max-width: 800px;
         }
     </style>
 </head>
@@ -44,13 +44,13 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const videoUrl = params.get('video');
-        const videoElement = document.getElementById("video-player");
 
         if (videoUrl) {
-            videoElement.src = videoUrl;
+            let videoElement = document.getElementById("video-player");
+            videoElement.setAttribute("src", videoUrl);
             videoElement.load(); // Cargar el video antes de inicializar el reproductor
 
-            const player = fluidPlayer("video-player", {
+            let player = fluidPlayer("video-player", {
                 layoutControls: {
                     primaryColor: "#FF6600",
                     playButtonShowing: true,
@@ -75,11 +75,15 @@
                 }
             });
 
-            // Asegurar que el video se reproduzca tras finalizar el anuncio
+            // Verifica que el reproductor cargó correctamente
+            console.log("Fluid Player inicializado:", player);
+
+            // Asegura que el video se reproduce después de los anuncios
             player.on('adEnded', function() {
-                console.log("Anuncio terminado");
+                console.log("Anuncio finalizado. Reanudando video...");
                 videoElement.play();
             });
+
         } else {
             document.getElementById('video-container').innerHTML = `
                 <div style="color: white; text-align: center; font-size: 1.5em;">
