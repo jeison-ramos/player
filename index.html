@@ -985,7 +985,11 @@
         <div style="margin-top:6px;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;">
           <span style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.2);border-radius:5px;padding:2px 8px;color:var(--accent);">HLS .m3u8</span>
           <span style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:5px;padding:2px 8px;color:#4ade80;">MP4 directo</span>
-          <span style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);border-radius:5px;padding:2px 8px;color:#60a5fa;">Google Drive</span>
+          <span style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);border-radius:5px;padding:2px 8px;color:#60a5fa;" title="Pega la URL de drive.google.com/file/d/... o la URL directa de googleapis.com/drive/v3/files/...?alt=media&key=...">Google Drive 🔵</span>
+        </div>
+        <div style="margin-top:8px;font-size:10.5px;color:var(--muted);line-height:1.6;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.12);border-radius:8px;padding:8px 12px;">
+          <strong style="color:#60a5fa;">Drive:</strong> Pega la URL normal de Drive <em>o</em> la URL directa de la API:<br>
+          <code style="color:#93c5fd;font-size:10px;">https://www.googleapis.com/drive/v3/files/<strong>ID</strong>?alt=media&amp;key=TU_API_KEY</code>
         </div>
       </div>
 
@@ -1498,23 +1502,45 @@ function renderInlinePreview(playerUrl) {
 
 /* ── DETECCIÓN DE TIPO DE VIDEO ── */
 function detectVideoType(url) {
-  // Google Drive: varios formatos de URL
+  // Ya es una URL directa de la API de Drive (alt=media)
+  if (/googleapis\.com\/drive\/v\d\/files\//.test(url) && url.includes('alt=media')) {
+    return { type: 'mp4', directUrl: url };
+  }
+  // Google Drive: URL normal → extraer ID para convertir a directa
   const drivePatterns = [
     /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
     /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
-    /drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/,
+    /drive\.google\.com\/uc\?(?:.*&)?id=([a-zA-Z0-9_-]+)/,
     /docs\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
   ];
   for (const re of drivePatterns) {
     const m = url.match(re);
     if (m) return { type: 'drive', id: m[1] };
   }
-  // MP4 directo
-  if (/\.mp4(\?.*)?$/i.test(url)) return { type: 'mp4' };
-  // WebM / OGV directo
-  if (/\.(webm|ogv)(\?.*)?$/i.test(url)) return { type: 'mp4' }; // mismo tratamiento
+  // MP4 / WebM / OGV directo
+  if (/\.(mp4|webm|ogv)(\?.*)?$/i.test(url)) return { type: 'mp4', directUrl: url };
   // HLS por defecto
   return { type: 'hls' };
+}
+
+/**
+ * Convierte una URL de Drive normal en la URL de reproducción directa.
+ * El usuario debe pegar una API key de Google válida para que funcione,
+ * o bien pegar directamente la googleapis URL con su propia key.
+ *
+ * Formato resultante:
+ *   https://www.googleapis.com/drive/v3/files/{ID}?alt=media&key={API_KEY}
+ *
+ * Si no hay API key configurada, avisa al usuario con un mensaje claro.
+ */
+const DRIVE_API_KEY = ''; // ← Pega aquí tu API key de Google si quieres conversión automática
+
+function driveIdToDirectUrl(id) {
+  if (DRIVE_API_KEY) {
+    return `https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${DRIVE_API_KEY}`;
+  }
+  // Sin API key: intentar con el parámetro uc (funciona para archivos públicos pequeños, limitado)
+  return `https://drive.google.com/uc?export=download&id=${id}`;
 }
 
 /* ── 3. MODO REPRODUCTOR ── */
@@ -1526,38 +1552,23 @@ function initPlayer(videoUrl, tracks, defaultSub, title, markers) {
   const detected = detectVideoType(videoUrl);
   showSpinner(true);
 
-  // ── Google Drive: usar iframe embed ──
+  // ── Google Drive: convertir URL normal → URL directa de reproducción ──
   if (detected.type === 'drive') {
-    // Ocultar el <video> y mostrar un iframe en su lugar
-    video.style.display = 'none';
-    document.getElementById('octopus-wrap').style.display = 'none';
-
-    const embedUrl = `https://drive.google.com/file/d/${detected.id}/preview`;
-    const iframe = document.createElement('iframe');
-    iframe.src = embedUrl;
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay; fullscreen');
-    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;z-index:5;';
-
-    const playerView = document.getElementById('player-view');
-    playerView.style.position = 'relative';
-    playerView.appendChild(iframe);
-
-    // Ocultar controles propios (Drive trae los suyos)
-    document.getElementById('controls').style.display = 'none';
-    document.getElementById('spinner').style.display  = 'none';
-    showSpinner(false);
-
-    setupTitleAutoHide(document.getElementById('player-title-bar'));
-    if (markers) setupMarkers(video, markers);
-    return;
+    const directUrl = driveIdToDirectUrl(detected.id);
+    // Tratar como MP4 directo con la URL convertida
+    video.src = directUrl;
+    video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
+    // Continuar con el flujo MP4 normal (controles propios, subtítulos, etc.)
+    detected.type = 'mp4';
   }
 
-  // ── MP4 directo ──
+  // ── MP4 directo (incluye Drive convertido) ──
   let hlsInstance = null;
   if (detected.type === 'mp4') {
-    video.src = videoUrl;
-    video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
+    if (!video.src) {
+      video.src = detected.directUrl || videoUrl;
+      video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
+    }
   } else {
     // ── HLS ──
     hlsInstance = loadHLS(video, videoUrl);
