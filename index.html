@@ -1,2261 +1,624 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamForge — Generador de Reproductores</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- HLS.js para streams .m3u8 -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
+<title>VapEmbed</title>
 
-  <!-- Google Fonts: Syne (display) + DM Sans (body) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <style>
-    /* ═══════════════════════════════════════════════════
-       TOKENS & VARIABLES
-    ═══════════════════════════════════════════════════ */
-    :root {
-      --bg:        #080b10;
-      --surface:   #0d1117;
-      --panel:     #111827;
-      --border:    rgba(255,255,255,.07);
-      --accent:    #e63946;
-      --accent2:   #f4a261;
-      --glow:      rgba(230,57,70,.35);
-      --text:      #e8eaf0;
-      --muted:     #6b7280;
-      --radius:    12px;
-      --font-head: 'Syne', sans-serif;
-      --font-body: 'DM Sans', sans-serif;
-      --ease:      cubic-bezier(.22,1,.36,1);
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<style>
 
-    html { scroll-behavior: smooth; }
+:root{
+  --bg:#06070b;
+  --panel:#10131c;
+  --panel2:#151927;
+  --border:rgba(255,255,255,.08);
+  --text:#fff;
+  --muted:#8f96ab;
+  --accent:#e50914;
+  --accent2:#ff3341;
+}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font-body);
-      font-size: 15px;
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
-    /* Grain overlay */
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 9999;
-      opacity: .6;
-    }
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,sans-serif;
+  min-height:100vh;
+}
 
-    /* ═══════════════════════════════════════════════════
-       GENERATOR VIEW
-    ═══════════════════════════════════════════════════ */
-    #generator-view {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 60px 24px 100px;
-    }
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+  radial-gradient(circle at top left, rgba(229,9,20,.14), transparent 30%),
+  radial-gradient(circle at bottom right, rgba(255,255,255,.03), transparent 30%);
+  pointer-events:none;
+}
 
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 56px;
-    }
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(230,57,70,.12);
-      border: 1px solid rgba(230,57,70,.25);
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      padding: 5px 14px;
-      border-radius: 99px;
-      margin-bottom: 20px;
-    }
-    .header-badge::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; box-shadow: 0 0 0 0 var(--glow); }
-      50%      { opacity: .7; box-shadow: 0 0 0 6px transparent; }
-    }
-    .header h1 {
-      font-family: var(--font-head);
-      font-size: clamp(2.2rem, 5vw, 3.6rem);
-      font-weight: 800;
-      letter-spacing: -.03em;
-      line-height: 1.05;
-      background: linear-gradient(135deg, #fff 30%, var(--accent) 80%, var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .header p {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 15px;
-      max-width: 480px;
-      margin-inline: auto;
-    }
+.container{
+  width:min(1200px,92%);
+  margin:auto;
+  padding:50px 0;
+}
 
-    /* Form card */
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 36px;
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: -60px; right: -60px;
-      width: 220px; height: 220px;
-      background: radial-gradient(circle, rgba(230,57,70,.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
+.hero{
+  text-align:center;
+  margin-bottom:40px;
+}
 
-    .form-section { margin-bottom: 28px; }
-    .form-section-title {
-      font-family: var(--font-head);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .form-section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
+.hero h1{
+  font-size:clamp(2.5rem,6vw,5rem);
+  font-weight:800;
 
-    .field { margin-bottom: 16px; }
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 7px;
-      letter-spacing: .04em;
-    }
-    .field label span {
-      color: var(--accent);
-      font-size: 10px;
-      margin-left: 5px;
-      vertical-align: middle;
-    }
+  background:linear-gradient(135deg,#fff 30%,#ff3341 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 
-    .input-wrap {
-      position: relative;
-    }
-    .input-wrap svg {
-      position: absolute;
-      left: 13px; top: 50%;
-      transform: translateY(-50%);
-      opacity: .35;
-      pointer-events: none;
-    }
+  margin-bottom:15px;
+}
 
-    input[type="text"], input[type="url"] {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--font-body);
-      font-size: 14px;
-      padding: 12px 14px 12px 40px;
-      transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
-      outline: none;
-    }
-    input[type="text"]:focus, input[type="url"]:focus {
-      border-color: rgba(230,57,70,.5);
-      box-shadow: 0 0 0 3px rgba(230,57,70,.1);
-    }
-    input::placeholder { color: var(--muted); opacity: .6; }
+.hero p{
+  color:var(--muted);
+  max-width:700px;
+  margin:auto;
+  line-height:1.7;
+}
 
+.grid{
+  display:grid;
+  grid-template-columns:420px 1fr;
+  gap:25px;
+}
 
-    /* ── Multi-track subtitle builder ── */
-    .btn-add-sub {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 9px 16px;
-      background: rgba(244,162,97,.08);
-      border: 1px dashed rgba(244,162,97,.3);
-      border-radius: var(--radius);
-      color: var(--accent2);
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      justify-content: center;
-      transition: background .2s, border-color .2s;
-      margin-top: 4px;
-    }
-    .btn-add-sub:hover { background: rgba(244,162,97,.14); border-color: rgba(244,162,97,.5); }
+@media(max-width:980px){
 
-    .sub-track-row {
-      display: grid;
-      grid-template-columns: 1fr 130px 36px;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .sub-track-row .url-col { position: relative; }
-    .sub-track-row .url-col svg { position: absolute; left:13px; top:50%; transform:translateY(-50%); opacity:.35; pointer-events:none; }
-    .sub-track-row input[type="url"] { padding-left: 38px !important; }
-    .sub-track-lang {
-      display: grid;
-      grid-template-columns: 80px 1fr;
-      gap: 6px;
-    }
-    .sub-track-lang select, .sub-track-lang input {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--font-body);
-      font-size: 13px;
-      padding: 10px 10px;
-      outline: none;
-      appearance: none;
-      -webkit-appearance: none;
-      transition: border-color .2s;
-    }
-    .sub-track-lang select:focus, .sub-track-lang input:focus { border-color: rgba(230,57,70,.5); }
-    .btn-remove-sub {
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(230,57,70,.08);
-      border: 1px solid rgba(230,57,70,.2);
-      border-radius: 8px;
-      color: var(--accent);
-      cursor: pointer;
-      transition: background .2s;
-      flex-shrink: 0;
-    }
-    .btn-remove-sub:hover { background: rgba(230,57,70,.18); }
+  .grid{
+    grid-template-columns:1fr;
+  }
 
-    /* Buttons */
-    .btn-generate {
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(135deg, var(--accent), #c1121f);
-      border: none;
-      border-radius: var(--radius);
-      color: #fff;
-      font-family: var(--font-head);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: .06em;
-      cursor: pointer;
-      transition: transform .2s var(--ease), box-shadow .2s var(--ease), opacity .2s;
-      box-shadow: 0 4px 24px rgba(230,57,70,.35);
-      margin-top: 8px;
-    }
-    .btn-generate:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(230,57,70,.5);
-    }
-    .btn-generate:active { transform: translateY(0); }
+}
 
-    /* ─── Output section ─── */
-    #output-section {
-      margin-top: 40px;
-      display: none;
-    }
-    #output-section.visible { display: block; }
+.card{
+  background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--border);
+  border-radius:28px;
+  padding:28px;
+}
 
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 28px;
-      color: var(--muted);
-      font-size: 11px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-    .divider::before, .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
+.section{
+  margin-bottom:28px;
+}
 
-    /* Preview wrapper */
-    .preview-wrap {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%; /* 16:9 */
-      background: #000;
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 24px;
-      border: 1px solid var(--border);
-    }
-    .preview-wrap iframe, .preview-wrap #inline-player-wrap {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
+.section-title{
+  font-size:11px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:16px;
+  font-weight:700;
+}
 
-    /* URL output */
-    .output-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-    .output-block-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .output-block-header strong { color: var(--text); }
+.field{
+  margin-bottom:16px;
+}
 
-    .output-code {
-      padding: 14px 16px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      color: #a5f3c0;
-      word-break: break-all;
-      line-height: 1.7;
-      max-height: 100px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
+.field label{
+  display:block;
+  margin-bottom:8px;
+  font-size:13px;
+  color:#d9dbe3;
+}
 
-    .btn-copy {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 12px;
-      cursor: pointer;
-      transition: background .2s, color .2s;
-    }
-    .btn-copy:hover { background: rgba(255,255,255,.12); }
-    .btn-copy.copied { color: #4ade80; border-color: rgba(74,222,128,.35); }
+.input,
+.select{
+  width:100%;
+  height:52px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:#0b0e14;
+  color:#fff;
+  padding:0 16px;
+  outline:none;
+  font-size:14px;
+}
 
-    /* ═══════════════════════════════════════════════════
-       PLAYER VIEW (modo embebido o directo)
-    ═══════════════════════════════════════════════════ */
-    #player-view {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 100;
-    }
-    #player-view.active { display: flex; flex-direction: column; }
+.input:focus,
+.select:focus{
+  border-color:rgba(229,9,20,.5);
+  box-shadow:0 0 0 4px rgba(229,9,20,.12);
+}
 
-    /* Título superpuesto (top) */
-    #player-title-bar {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      z-index: 30;
-      padding: 18px 24px;
-      background: linear-gradient(to bottom, rgba(0,0,0,.8) 0%, transparent 100%);
-      font-family: var(--font-head);
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .04em;
-      color: #fff;
-      pointer-events: none;
-      transition: opacity .4s;
-    }
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
 
-    /* El video */
-    #main-video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-    }
+.hidden{
+  display:none;
+}
 
-    /* Subtítulos nativos .vtt */
-    video::cue {
-      background: rgba(0,0,0,.75);
-      color: #fff;
-      font-family: var(--font-body);
-      font-size: 1.1em;
-      border-radius: 4px;
-      padding: 2px 6px;
-    }
+.subtitle-item{
+  background:#0b0e14;
+  border:1px solid var(--border);
+  padding:15px;
+  border-radius:18px;
+  margin-bottom:15px;
+}
 
-    /* ── Barra de controles ── */
-    #controls {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      z-index: 30;
-      padding: 0 20px 18px;
-      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 100%);
-      transform: translateY(0);
-      transition: opacity .35s, transform .35s var(--ease);
-    }
-    #controls.hidden {
-      opacity: 0;
-      transform: translateY(16px);
-      pointer-events: none;
-    }
+.add-sub{
+  width:100%;
+  height:50px;
+  border:none;
+  border-radius:14px;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
 
-    /* Progress bar */
-    #progress-wrap {
-      position: relative;
-      height: 4px;
-      background: rgba(255,255,255,.2);
-      border-radius: 99px;
-      margin-bottom: 14px;
-      cursor: pointer;
-      transition: height .15s;
-    }
-    #progress-wrap:hover { height: 7px; }
-    #progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      border-radius: 99px;
-      width: 0%;
-      pointer-events: none;
-    }
-    #progress-thumb {
-      position: absolute;
-      top: 50%; transform: translate(-50%,-50%) scale(0);
-      width: 14px; height: 14px;
-      background: #fff;
-      border-radius: 50%;
-      transition: transform .15s;
-      pointer-events: none;
-    }
-    #progress-wrap:hover #progress-thumb { transform: translate(-50%,-50%) scale(1); }
+.generate{
+  width:100%;
+  height:58px;
+  border:none;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:10px;
+}
 
-    /* Time tooltip */
-    #time-tooltip {
-      position: absolute;
-      bottom: 18px;
-      background: rgba(0,0,0,.85);
-      color: #fff;
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 5px;
-      pointer-events: none;
-      white-space: nowrap;
-      display: none;
-      transform: translateX(-50%);
-    }
+.preview{
+  aspect-ratio:16/9;
+  border-radius:22px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:#000;
+}
 
-    /* Buttons row */
-    .ctrl-row {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .ctrl-row-right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.preview iframe{
+  width:100%;
+  height:100%;
+  border:none;
+}
 
-    .ctrl-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,.85);
-      cursor: pointer;
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 8px;
-      transition: background .15s, color .15s;
-      flex-shrink: 0;
-    }
-    .ctrl-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
-    .ctrl-btn svg { width: 18px; height: 18px; display: block; }
+.output{
+  margin-top:20px;
+}
 
-    /* Volume slider */
-    #vol-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 70px; height: 3px;
-      background: rgba(255,255,255,.25);
-      border-radius: 99px;
-      outline: none;
-      cursor: pointer;
-    }
-    #vol-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: #fff;
-    }
+.output-box{
+  background:#0b0e14;
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:15px;
+}
 
-    /* Time display */
-    .time-display {
-      font-size: 12px;
-      color: rgba(255,255,255,.7);
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      padding: 0 6px;
-    }
+.output-head{
+  padding:15px 18px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
 
-    /* Subtitle menu */
-    #sub-menu {
-      position: absolute;
-      bottom: 56px; right: 10px;
-      background: rgba(12,15,20,.96);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      min-width: 160px;
-      max-width: calc(100vw - 20px);
-      overflow: hidden;
-      display: none;
-      box-shadow: 0 12px 40px rgba(0,0,0,.6);
-      z-index: 35;
-    }
-    #sub-menu.open { display: block; }
-    .sub-menu-title {
-      padding: 10px 14px 6px;
-      font-size: 10px;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .sub-item {
-      padding: 9px 14px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background .15s;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .sub-item:hover { background: rgba(255,255,255,.07); }
-    .sub-item.active { color: var(--accent); }
-    .sub-item .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      opacity: 0;
-    }
-    .sub-item.active .dot { opacity: 1; }
+.output-code{
+  padding:18px;
+  color:#8effb2;
+  font-family:monospace;
+  font-size:12px;
+  line-height:1.8;
+  word-break:break-all;
+}
 
-    /* ── Menú de calidades ── */
-    #quality-menu {
-      position: absolute;
-      bottom: 56px; right: 10px;
-      background: rgba(12,15,20,.96);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      min-width: 150px;
-      max-width: calc(100vw - 20px);
-      overflow: hidden;
-      display: none;
-      box-shadow: 0 12px 40px rgba(0,0,0,.6);
-      z-index: 35;
-    }
-    #quality-menu.open { display: block; }
-    .quality-item {
-      padding: 9px 14px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background .15s;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .quality-item:hover { background: rgba(255,255,255,.07); }
-    .quality-item.active { color: var(--accent2); }
-    .quality-item .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent2);
-      flex-shrink: 0;
-      opacity: 0;
-    }
-    .quality-item.active .dot { opacity: 1; }
-    .quality-badge {
-      margin-left: auto;
-      font-size: 10px;
-      color: var(--muted);
-      font-weight: 500;
-    }
+.copy{
+  border:none;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  border-radius:10px;
+  padding:8px 12px;
+  cursor:pointer;
+}
 
-    /* ── Panel de estilos de subtítulos ── */
-    #sub-style-panel {
-      position: absolute;
-      bottom: 56px; right: 0; left: 0;
-      margin: 0 10px;
-      background: rgba(10,13,18,.97);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      display: none;
-      box-shadow: 0 -8px 40px rgba(0,0,0,.7);
-      backdrop-filter: blur(12px);
-      z-index: 40;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-    #sub-style-panel.open { display: block; }
-    .ssp-title {
-      font-family: var(--font-head);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: .13em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .ssp-close {
-      background: none; border: none; color: var(--muted);
-      cursor: pointer; font-size: 16px; line-height: 1;
-      padding: 0 2px;
-      transition: color .15s;
-    }
-    .ssp-close:hover { color: var(--text); }
-    .ssp-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 20px;
-    }
-    @media (max-width: 600px) { .ssp-grid { grid-template-columns: 1fr; } }
-    .ssp-row { display: flex; flex-direction: column; gap: 5px; }
-    .ssp-label {
-      font-size: 11px;
-      color: var(--muted);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .ssp-label span { color: var(--text); font-weight: 500; font-size: 11px; }
-    .ssp-row input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%; height: 3px;
-      background: rgba(255,255,255,.18);
-      border-radius: 99px;
-      outline: none;
-      cursor: pointer;
-    }
-    .ssp-row input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 13px; height: 13px;
-      border-radius: 50%;
-      background: var(--accent2);
-      border: 2px solid #fff;
-    }
-    .ssp-row input[type="color"] {
-      -webkit-appearance: none;
-      width: 100%; height: 26px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: none;
-      cursor: pointer;
-      padding: 1px;
-    }
-    .ssp-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-    .ssp-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
-    .ssp-preview {
-      margin-top: 12px;
-      padding: 10px;
-      background: rgba(0,0,0,.5);
-      border-radius: 8px;
-      text-align: center;
-      font-size: 15px;
-      pointer-events: none;
-      border: 1px solid var(--border);
-    }
-    .ssp-preview span {
-      /* estilos se aplican via JS */
-    }
+.remove-sub{
+  width:100%;
+  height:42px;
+  border:none;
+  border-radius:12px;
+  background:rgba(255,0,0,.12);
+  color:#ff7070;
+  margin-top:10px;
+  cursor:pointer;
+  font-weight:700;
+}
 
-    /* Overlay de SubtitlesOctopus */
-    #octopus-wrap {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 20;
-      overflow: hidden;
-    }
-    #octopus-wrap canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* Spinner */
-    #spinner {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
-      z-index: 25;
-      display: none;
-    }
-    #spinner.active { display: block; }
-    .spin-ring {
-      width: 44px; height: 44px;
-      border: 3px solid rgba(255,255,255,.1);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Error overlay */
-    #player-error {
-      position: absolute;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: rgba(0,0,0,.7);
-      font-size: 14px;
-      color: var(--muted);
-      text-align: center;
-      padding: 24px;
-      z-index: 26;
-    }
-    #player-error.active { display: flex; }
-    #player-error strong { color: var(--accent); font-size: 18px; }
-
-    /* ── SKIP MARKERS (Intro / Ending) ── */
-    .skip-btn {
-      position: absolute;
-      bottom: 72px;
-      right: 18px;
-      z-index: 20;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      background: rgba(10,12,18,.82);
-      border: 1px solid rgba(255,255,255,.18);
-      border-radius: 8px;
-      color: #fff;
-      font-family: var(--font-body);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      transition: background .18s, border-color .18s, transform .18s;
-      white-space: nowrap;
-    }
-    .skip-btn.visible { display: flex; }
-    .skip-btn:hover {
-      background: rgba(230,57,70,.75);
-      border-color: rgba(230,57,70,.6);
-      transform: translateY(-2px);
-    }
-    .skip-btn svg { flex-shrink: 0; }
-
-    /* ═══════════════════════════════════════════════════
-       RESPONSIVE — PLAYER EN IFRAME / MÓVIL
-    ═══════════════════════════════════════════════════ */
-
-    /* ── Pantallas pequeñas (≤480px) ── */
-    @media (max-width: 480px), (max-height: 360px) {
-
-      /* Controles más compactos */
-      #controls {
-        padding: 0 10px 10px;
-      }
-      #progress-wrap {
-        margin-bottom: 8px;
-      }
-      .ctrl-btn {
-        width: 30px;
-        height: 30px;
-      }
-      .ctrl-btn svg {
-        width: 15px;
-        height: 15px;
-      }
-      .ctrl-row { gap: 1px; }
-      .ctrl-row-right { gap: 1px; }
-
-      /* Ocultar slider de volumen en móvil */
-      #vol-slider { display: none; }
-
-      /* Tiempo más pequeño */
-      .time-display { font-size: 10px; padding: 0 3px; }
-
-      /* Título más pequeño */
-      #player-title-bar {
-        font-size: 12px;
-        padding: 10px 12px;
-      }
-
-      /* Skip buttons pegados encima de los controles */
-      .skip-btn {
-        bottom: 58px;
-        right: 10px;
-        padding: 7px 12px;
-        font-size: 12px;
-        gap: 5px;
-      }
-      .skip-btn svg { width: 12px; height: 12px; }
-
-      /* Menús anclados al fondo, ocupan todo el ancho */
-      #sub-menu,
-      #quality-menu {
-        bottom: 52px;
-        right: 0;
-        left: 0;
-        border-radius: var(--radius) var(--radius) 0 0;
-        min-width: 0;
-        max-height: 40vh;
-        overflow-y: auto;
-      }
-
-      /* Panel de estilos sin márgenes laterales */
-      #sub-style-panel {
-        bottom: 52px;
-        left: 0;
-        right: 0;
-        margin: 0;
-        border-radius: var(--radius) var(--radius) 0 0;
-        padding: 12px 14px;
-        max-height: 55vh;
-        overflow-y: auto;
-      }
-
-      /* Grid de estilos a 1 columna */
-      .ssp-grid { grid-template-columns: 1fr; gap: 10px; }
-    }
-
-    /* ── Pantallas medianas (481–768px) ── */
-    @media (min-width: 481px) and (max-width: 768px) {
-      #controls { padding: 0 14px 14px; }
-      #vol-slider { display: none; }
-      .ctrl-btn { width: 32px; height: 32px; }
-      .time-display { font-size: 11px; }
-
-      .skip-btn {
-        bottom: 62px;
-        right: 14px;
-        padding: 8px 14px;
-        font-size: 13px;
-      }
-
-      /* Menús: ancho automático pero sin salirse por la derecha */
-      #sub-menu {
-        right: 10px;
-        left: auto;
-        bottom: 52px;
-      }
-      #quality-menu {
-        right: 10px;
-        left: auto;
-        bottom: 52px;
-      }
-
-      #sub-style-panel {
-        left: 0; right: 0;
-        margin: 0 10px;
-        bottom: 52px;
-        border-radius: var(--radius);
-      }
-      .ssp-grid { grid-template-columns: 1fr; gap: 10px; }
-    }
-
-    /* ── Cuando el reproductor está en un iframe muy estrecho (< 340px) ── */
-    @media (max-width: 340px) {
-      #controls { padding: 0 6px 8px; }
-      .ctrl-btn { width: 26px; height: 26px; }
-      .ctrl-btn svg { width: 13px; height: 13px; }
-      .time-display { display: none; }
-      #player-title-bar { font-size: 11px; padding: 8px; }
-      .skip-btn {
-        bottom: 50px;
-        right: 6px;
-        padding: 6px 10px;
-        font-size: 11px;
-      }
-      #sub-menu, #quality-menu {
-        bottom: 46px;
-        right: 0; left: 0;
-        border-radius: var(--radius) var(--radius) 0 0;
-      }
-      #sub-style-panel {
-        bottom: 46px;
-        left: 0; right: 0;
-        margin: 0;
-        border-radius: var(--radius) var(--radius) 0 0;
-        padding: 10px;
-        max-height: 60vh;
-        overflow-y: auto;
-      }
-      .ssp-grid { grid-template-columns: 1fr; }
-    }
-
-    /* ── Generator view responsive ── */
-    @media (max-width: 600px) {
-      #generator-view { padding: 32px 14px 80px; }
-      .card { padding: 22px 16px; }
-    }
-
-    /* ── Landscape móvil (altura muy limitada) ── */
-    @media (max-height: 300px) {
-      #controls { padding: 0 10px 6px; }
-      #progress-wrap { margin-bottom: 4px; }
-      .ctrl-btn { width: 28px; height: 28px; }
-      #player-title-bar { display: none; }
-      .skip-btn { bottom: 44px; padding: 5px 10px; font-size: 11px; }
-      #sub-menu, #quality-menu, #sub-style-panel {
-        bottom: 40px;
-        max-height: 70vh;
-        overflow-y: auto;
-      }
-    }
-
-    /* Animación entrada */
-    .fade-up {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUp .6s var(--ease) forwards;
-    }
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .delay-1 { animation-delay: .1s; }
-    .delay-2 { animation-delay: .2s; }
-    .delay-3 { animation-delay: .3s; }
-  </style>
+</style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════
-     VISTA: GENERADOR (se muestra si NO hay params en URL)
-══════════════════════════════════════════════════ -->
-<div id="generator-view">
+<div class="container">
 
-  <header class="header fade-up">
-    <div class="header-badge">Reproductor Embebible</div>
-    <h1>StreamForge</h1>
-    <p>Genera reproductores de video con HLS .m3u8, MP4 directo, Google Drive, subtítulos .vtt y .ass, listos para incrustar en cualquier sitio.</p>
-  </header>
+  <div class="hero">
 
-  <div class="card fade-up delay-1">
+    <h1>VapEmbed</h1>
 
-    <!-- ── Sección: Fuente de Video ── -->
-    <div class="form-section">
-      <div class="form-section-title">Fuente de video</div>
+    <p>
+      Generador avanzado para VidAPI/Vaplayer con soporte para múltiples subtítulos personalizados.
+    </p>
 
-      <div class="field">
-        <label for="inp-video">URL del video <span>* requerido</span></label>
-        <div class="input-wrap">
-          <!-- Ícono stream -->
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <input type="url" id="inp-video" placeholder="HLS .m3u8 · MP4 directo · URL de Google Drive" autocomplete="off" spellcheck="false" />
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT -->
+
+    <div class="card">
+
+      <div class="section">
+
+        <div class="section-title">
+          Media
         </div>
-        <div style="margin-top:6px;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;">
-          <span style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.2);border-radius:5px;padding:2px 8px;color:var(--accent);">HLS .m3u8</span>
-          <span style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:5px;padding:2px 8px;color:#4ade80;">MP4 directo</span>
-          <span style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);border-radius:5px;padding:2px 8px;color:#60a5fa;" title="Pega la URL de drive.google.com/file/d/... o la URL directa de googleapis.com/drive/v3/files/...?alt=media&key=...">Google Drive 🔵</span>
-        </div>
-        <div style="margin-top:8px;font-size:10.5px;color:var(--muted);line-height:1.6;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.12);border-radius:8px;padding:8px 12px;">
-          <strong style="color:#60a5fa;">Drive:</strong> Pega la URL normal de Drive <em>o</em> la URL directa de la API:<br>
-          <code style="color:#93c5fd;font-size:10px;">https://www.googleapis.com/drive/v3/files/<strong>ID</strong>?alt=media&amp;key=TU_API_KEY</code>
-        </div>
-      </div>
 
-      <div class="field">
-        <label for="inp-title">Título del video</label>
-        <div class="input-wrap">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-          <input type="text" id="inp-title" placeholder="Nombre del episodio o película" />
-        </div>
-      </div>
-    </div>
+        <div class="field">
+          <label>Tipo</label>
 
-    <!-- ── Sección: Subtítulos ── -->
-    <div class="form-section">
-      <div class="form-section-title">Subtítulos</div>
-
-      <div id="sub-tracks-list"></div>
-
-      <button type="button" class="btn-add-sub" id="btn-add-sub">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Agregar pista de subtítulos
-      </button>
-
-      <div class="field" style="margin-top:14px;">
-        <label for="inp-default-sub">Subtítulo activo por defecto</label>
-        <div class="input-wrap">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          <select id="inp-default-sub" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:14px;padding:12px 14px 12px 40px;outline:none;appearance:none;-webkit-appearance:none;">
-            <option value="">Sin subtítulos por defecto</option>
+          <select class="select" id="type">
+            <option value="movie">Película</option>
+            <option value="tv">Serie</option>
           </select>
         </div>
+
+        <div class="field">
+          <label>IMDB o TMDB ID</label>
+
+          <input
+          type="text"
+          class="input"
+          id="id"
+          placeholder="tt23779058 o 205715"
+          />
+        </div>
+
+        <div id="tvFields" class="hidden">
+
+          <div class="row">
+
+            <div class="field">
+              <label>Temporada</label>
+
+              <input
+              type="number"
+              class="input"
+              id="season"
+              value="1"
+              />
+            </div>
+
+            <div class="field">
+              <label>Episodio</label>
+
+              <input
+              type="number"
+              class="input"
+              id="episode"
+              value="1"
+              />
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
-    </div>
 
-    <!-- ── Sección: Marcadores ── -->
-    <div class="form-section">
-      <div class="form-section-title">Marcadores</div>
+      <!-- PLAYER -->
 
-      <!-- Skip Intro -->
-      <div style="margin-bottom:18px;">
-        <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">
-          ⏭ Saltar Intro
+      <div class="section">
+
+        <div class="section-title">
+          Player
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field" style="margin:0;">
-            <label for="inp-intro-start">Inicio <span style="opacity:.45;font-size:10px;">(mm:ss)</span></label>
-            <div class="input-wrap">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <input type="text" id="inp-intro-start" placeholder="0:00" autocomplete="off" />
-            </div>
-          </div>
-          <div class="field" style="margin:0;">
-            <label for="inp-intro-end">Fin <span style="opacity:.45;font-size:10px;">(mm:ss)</span></label>
-            <div class="input-wrap">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <input type="text" id="inp-intro-end" placeholder="1:30" autocomplete="off" />
-            </div>
-          </div>
+
+        <div class="field">
+          <label>Título</label>
+
+          <input
+          type="text"
+          class="input"
+          id="title"
+          placeholder="Naruto Shippuden"
+          />
         </div>
+
+        <div class="field">
+          <label>Poster URL</label>
+
+          <input
+          type="text"
+          class="input"
+          id="poster"
+          placeholder="https://image.jpg"
+          />
+        </div>
+
+        <div class="field">
+          <label>Color</label>
+
+          <input
+          type="color"
+          class="input"
+          id="color"
+          value="#e50914"
+          style="padding:5px;"
+          />
+        </div>
+
       </div>
 
-      <!-- Skip Ending -->
-      <div>
-        <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">
-          ⏭ Saltar Créditos
+      <!-- SUBS -->
+
+      <div class="section">
+
+        <div class="section-title">
+          Subtítulos
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="field" style="margin:0;">
-            <label for="inp-ending-start">Inicio <span style="opacity:.45;font-size:10px;">(mm:ss)</span></label>
-            <div class="input-wrap">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <input type="text" id="inp-ending-start" placeholder="22:00" autocomplete="off" />
-            </div>
-          </div>
-          <div class="field" style="margin:0;">
-            <label for="inp-ending-end">Fin <span style="opacity:.45;font-size:10px;">(mm:ss)</span></label>
-            <div class="input-wrap">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <input type="text" id="inp-ending-end" placeholder="24:00" autocomplete="off" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Botón principal -->
-    <button class="btn-generate" id="btn-generate">
-      ⚡ Generar Reproductor
-    </button>
+        <div id="subsContainer"></div>
 
-  </div><!-- /card -->
-
-  <!-- ── Output: URL + iframe ── -->
-  <div id="output-section">
-
-    <div class="divider">Resultado</div>
-
-    <!-- Preview 16:9 -->
-    <div class="preview-wrap" id="preview-wrap">
-      <!-- El reproductor inline se inyecta aquí en modo preview -->
-    </div>
-
-    <!-- URL generada -->
-    <div class="output-block fade-up">
-      <div class="output-block-header">
-        <strong>🔗 URL del reproductor</strong>
-        <button class="btn-copy" id="copy-url" onclick="copyText('copy-url','url-code')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copiar
+        <button class="add-sub" onclick="addSubtitle()">
+          + Agregar subtítulo
         </button>
+
       </div>
-      <div class="output-code" id="url-code"></div>
-    </div>
 
-    <!-- Iframe generado -->
-    <div class="output-block fade-up delay-1">
-      <div class="output-block-header">
-        <strong>📋 Código iframe</strong>
-        <button class="btn-copy" id="copy-iframe" onclick="copyText('copy-iframe','iframe-code')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copiar
-        </button>
-      </div>
-      <div class="output-code" id="iframe-code"></div>
-    </div>
-
-  </div><!-- /output-section -->
-
-</div><!-- /generator-view -->
-
-
-<!-- ══════════════════════════════════════════════════
-     VISTA: REPRODUCTOR (se activa cuando hay params en URL)
-══════════════════════════════════════════════════ -->
-<div id="player-view">
-
-  <!-- Skip Intro / Skip Ending buttons -->
-  <button id="btn-skip-intro" class="skip-btn" aria-label="Saltar intro">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-    Saltar intro
-  </button>
-  <button id="btn-skip-ending" class="skip-btn" aria-label="Saltar créditos">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-    Saltar créditos
-  </button>
-
-  <!-- Título -->
-  <div id="player-title-bar" id="ptitle"></div>
-
-  <!-- Video element -->
-  <video id="main-video" playsinline preload="metadata" crossorigin="anonymous"></video>
-
-  <!-- Contenedor para SubtitlesOctopus (.ass) -->
-  <div id="octopus-wrap"></div>
-
-  <!-- Spinner de carga -->
-  <div id="spinner"><div class="spin-ring"></div></div>
-
-  <!-- Mensaje de error -->
-  <div id="player-error">
-    <strong>Error de reproducción</strong>
-    <span id="error-msg">No se pudo cargar el stream.</span>
-  </div>
-
-  <!-- Tooltip de tiempo al scrubbing -->
-  <div id="time-tooltip"></div>
-
-  <!-- ── Controles ── -->
-  <div id="controls">
-
-    <!-- Barra de progreso -->
-    <div id="progress-wrap">
-      <div id="progress-fill"></div>
-      <div id="progress-thumb"></div>
-    </div>
-
-    <div class="ctrl-row">
-
-      <!-- Play/Pause -->
-      <button class="ctrl-btn" id="btn-play" title="Play / Pausa">
-        <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <button class="generate" onclick="generatePlayer()">
+        GENERAR PLAYER
       </button>
 
-      <!-- Volumen -->
-      <button class="ctrl-btn" id="btn-mute" title="Mute">
-        <svg id="icon-vol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        <svg id="icon-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-      </button>
-      <input type="range" id="vol-slider" min="0" max="1" step="0.02" value="1" />
-
-      <!-- Tiempo -->
-      <span class="time-display" id="time-current">0:00</span>
-      <span class="time-display" style="opacity:.4">/</span>
-      <span class="time-display" id="time-total">0:00</span>
-
-      <div class="ctrl-row-right">
-
-        <!-- Calidad -->
-        <button class="ctrl-btn" id="btn-quality" title="Calidad" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 8h2l1 3 2-6 1 3h2"/></svg>
-        </button>
-
-        <!-- Subtítulos -->
-        <button class="ctrl-btn" id="btn-subs" title="Subtítulos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 13h4"/><path d="M15 13h2"/><path d="M7 17h2"/><path d="M13 17h4"/></svg>
-        </button>
-
-        <!-- Estilos de subtítulos -->
-        <button class="ctrl-btn" id="btn-sub-style" title="Estilos de subtítulos" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-        </button>
-
-        <!-- Fullscreen -->
-        <button class="ctrl-btn" id="btn-fs" title="Pantalla completa">
-          <svg id="icon-fs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-          <svg id="icon-exit-fs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
-        </button>
-
-      </div>
     </div>
-  </div><!-- /controls -->
 
-  <!-- Menú de subtítulos -->
-  <div id="sub-menu">
-    <div class="sub-menu-title">Subtítulos</div>
-    <!-- Items se generan dinámicamente -->
-  </div>
+    <!-- RIGHT -->
 
-  <!-- Menú de calidades -->
-  <div id="quality-menu">
-    <div class="sub-menu-title">Calidad</div>
-    <!-- Items se generan dinámicamente -->
-  </div>
+    <div>
 
-  <!-- Panel de estilos de subtítulos -->
-  <div id="sub-style-panel">
-    <div class="ssp-title">
-      Estilos de subtítulos
-      <button class="ssp-close" id="btn-close-ssp">✕</button>
-    </div>
-    <div class="ssp-grid">
-      <div class="ssp-row">
-        <label class="ssp-label">Color de texto <span id="lbl-color">#ffffff</span></label>
-        <input type="color" id="ssp-color" value="#ffffff" />
+      <div class="preview">
+        <iframe
+        id="preview"
+        allowfullscreen
+        allow="autoplay; fullscreen"
+        ></iframe>
       </div>
-      <div class="ssp-row">
-        <label class="ssp-label">Tamaño de fuente <span id="lbl-size">100%</span></label>
-        <input type="range" id="ssp-size" min="60" max="200" value="100" step="5" />
-      </div>
-      <div class="ssp-row">
-        <label class="ssp-label">Opacidad fondo <span id="lbl-bg-opacity">75%</span></label>
-        <input type="range" id="ssp-bg-opacity" min="0" max="100" value="75" step="5" />
-      </div>
-      <div class="ssp-row">
-        <label class="ssp-label">Color fondo <span id="lbl-bg-color">#000000</span></label>
-        <input type="color" id="ssp-bg-color" value="#000000" />
-      </div>
-      <div class="ssp-row">
-        <label class="ssp-label">Sombra de texto <span id="lbl-shadow">50%</span></label>
-        <input type="range" id="ssp-shadow" min="0" max="100" value="50" step="5" />
-      </div>
-      <div class="ssp-row">
-        <label class="ssp-label">Opacidad texto <span id="lbl-text-opacity">100%</span></label>
-        <input type="range" id="ssp-text-opacity" min="20" max="100" value="100" step="5" />
-      </div>
-      <div class="ssp-row">
-        <label class="ssp-label">
-          Posición vertical
-          <span id="lbl-position" style="font-size:10px;opacity:.6;margin-left:4px;">abajo</span>
-        </label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex-shrink:0"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
-          <input type="range" id="ssp-position" min="0" max="100" value="90" step="1" style="flex:1;" />
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex-shrink:0"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>
+
+      <div class="output">
+
+        <div class="output-box">
+
+          <div class="output-head">
+            URL FINAL
+
+            <button class="copy" onclick="copyText('urlOutput')">
+              Copiar
+            </button>
+
+          </div>
+
+          <div class="output-code" id="urlOutput"></div>
+
         </div>
+
+        <div class="output-box">
+
+          <div class="output-head">
+            IFRAME
+
+            <button class="copy" onclick="copyText('iframeOutput')">
+              Copiar
+            </button>
+
+          </div>
+
+          <div class="output-code" id="iframeOutput"></div>
+
+        </div>
+
       </div>
+
     </div>
-    <div class="ssp-preview">
-      <span id="ssp-preview-text">Así se verán los subtítulos</span>
-    </div>
+
   </div>
 
-</div><!-- /player-view -->
-
+</div>
 
 <script>
-/* ══════════════════════════════════════════════════════════════
-   StreamForge — Lógica principal
-══════════════════════════════════════════════════════════════ */
 
-/* ══ IDIOMAS PREDEFINIDOS ══ */
-const LANG_PRESETS = [
-  { code: 'es',    label: 'Español' },
-  { code: 'es-ES', label: 'Español (España)' },
-  { code: 'es-LA', label: 'Español (Latino)' },
-  { code: 'en',    label: 'English' },
-  { code: 'en-US', label: 'English (US)' },
-  { code: 'en-GB', label: 'English (UK)' },
-  { code: 'pt',    label: 'Português' },
-  { code: 'pt-BR', label: 'Português (Brasil)' },
-  { code: 'fr',    label: 'Français' },
-  { code: 'de',    label: 'Deutsch' },
-  { code: 'it',    label: 'Italiano' },
-  { code: 'ja',    label: '日本語' },
-  { code: 'zh',    label: '中文' },
-  { code: 'ko',    label: '한국어' },
-  { code: 'ar',    label: 'العربية' },
-  { code: 'custom','label': 'Otro...' },
-];
+const typeSelect = document.getElementById('type');
+const tvFields = document.getElementById('tvFields');
 
-/* ── 1. LECTURA DE PARÁMETROS ── */
-const params  = new URLSearchParams(window.location.search);
-const P_VIDEO  = params.get('video');
-const P_TITLE  = params.get('title');
-// Formato multi-pista: subs=Label:tipo:url|Label:tipo:url|...
-// Retrocompatibilidad con parámetros vtt/ass legacy
-const P_SUBS_RAW   = params.get('subs');
-const P_DEFAULT_SUB = params.get('defaultSub') || '';
+typeSelect.addEventListener('change', () => {
 
-const P_INTRO_START  = params.get('introStart');
-const P_INTRO_END    = params.get('introEnd');
-const P_ENDING_START = params.get('endingStart');
-const P_ENDING_END   = params.get('endingEnd');
-
-function parseSubsParam(raw, legacyVtt, legacyAss) {
-  const tracks = [];
-  if (raw) {
-    raw.split('|').forEach(part => {
-      const idx = part.indexOf(':');
-      if (idx < 0) return;
-      const label = decodeURIComponent(part.slice(0, idx));
-      const rest  = part.slice(idx + 1);
-      const idx2  = rest.indexOf(':');
-      if (idx2 < 0) return;
-      const type = rest.slice(0, idx2);
-      const url  = decodeURIComponent(rest.slice(idx2 + 1));
-      if (url) tracks.push({ label, type, url });
-    });
+  if(typeSelect.value === 'tv'){
+    tvFields.classList.remove('hidden');
+  }else{
+    tvFields.classList.add('hidden');
   }
-  // legacy fallback
-  if (tracks.length === 0) {
-    if (legacyVtt) tracks.push({ label: 'Subtítulos', type: 'vtt', url: legacyVtt });
-    if (legacyAss) tracks.push({ label: 'Subtítulos (ASS)', type: 'ass', url: legacyAss });
-  }
-  return tracks;
-}
 
-const P_TRACKS = parseSubsParam(P_SUBS_RAW, params.get('vtt'), params.get('ass'));
+});
 
-/* ── 2. MODO GENERADOR ── */
-let subTrackCount = 0;
+let subIndex = 0;
 
-if (P_VIDEO) {
-  document.getElementById('generator-view').style.display = 'none';
-  initPlayer(P_VIDEO, P_TRACKS, P_DEFAULT_SUB, P_TITLE || '', {
-    introStart:  P_INTRO_START,
-    introEnd:    P_INTRO_END,
-    endingStart: P_ENDING_START,
-    endingEnd:   P_ENDING_END,
-  });
-} else {
-  document.getElementById('generator-view').style.display = 'block';
-  initGenerator();
-}
+function addSubtitle(){
 
-function initGenerator() {
-  document.getElementById('btn-generate').addEventListener('click', handleGenerate);
-  document.getElementById('inp-video').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleGenerate();
-  });
-  document.getElementById('btn-add-sub').addEventListener('click', () => addSubTrackRow());
-  // Agregar una pista por defecto
-  addSubTrackRow();
-}
+  subIndex++;
 
-function addSubTrackRow(defaults = {}) {
-  subTrackCount++;
-  const id  = subTrackCount;
-  const list = document.getElementById('sub-tracks-list');
-  const row  = document.createElement('div');
-  row.className  = 'sub-track-row';
-  row.dataset.id = id;
+  const container = document.getElementById('subsContainer');
 
-  // Opciones de idioma
-  const langOpts = LANG_PRESETS.map(l =>
-    `<option value="${l.code}" ${defaults.lang === l.code ? 'selected' : ''}>${l.label}</option>`
-  ).join('');
+  const div = document.createElement('div');
 
-  row.innerHTML = `
-    <div class="url-col">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 2l-4 5-4-5"/></svg>
-      <input type="url" class="sub-url-input" placeholder="https://…/subtitulo.vtt o .ass" value="${defaults.url || ''}" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:14px;padding:12px 14px 12px 38px;outline:none;" />
+  div.className = 'subtitle-item';
+
+  div.innerHTML = `
+
+    <div class="field">
+      <label>Nombre del subtítulo</label>
+
+      <input
+      type="text"
+      class="input sub-label"
+      placeholder="Español Latino"
+      />
     </div>
-    <div class="sub-track-lang">
-      <select class="sub-type-select" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 8px;outline:none;appearance:none;">
-        <option value="vtt" ${(defaults.type||'vtt')==='vtt'?'selected':''}>VTT</option>
-        <option value="ass" ${defaults.type==='ass'?'selected':''}>ASS</option>
-      </select>
-      <select class="sub-lang-select" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 8px;outline:none;appearance:none;">
-        ${langOpts}
-      </select>
+
+    <div class="field">
+      <label>URL del subtítulo</label>
+
+      <input
+      type="text"
+      class="input sub-url"
+      placeholder="https://example.com/sub.vtt"
+      />
     </div>
-    <button type="button" class="btn-remove-sub" title="Eliminar pista">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+    <div class="field">
+      <label>Idioma</label>
+
+      <input
+      type="text"
+      class="input sub-lang"
+      placeholder="es"
+      />
+    </div>
+
+    <button class="remove-sub">
+      Eliminar subtítulo
     </button>
+
   `;
 
-  // Custom label input para "Otro..."
-  const langSel = row.querySelector('.sub-lang-select');
-  langSel.addEventListener('change', () => updateDefaultSubOptions());
+  div.querySelector('.remove-sub').onclick = () => {
+    div.remove();
+  };
 
-  row.querySelector('.btn-remove-sub').addEventListener('click', () => {
-    row.remove();
-    updateDefaultSubOptions();
-  });
+  container.appendChild(div);
 
-  row.querySelector('.sub-url-input').addEventListener('input', updateDefaultSubOptions);
-
-  list.appendChild(row);
-  updateDefaultSubOptions();
 }
 
-function getSubTracks() {
-  const rows = document.querySelectorAll('.sub-track-row');
-  const tracks = [];
-  rows.forEach(row => {
-    const url  = row.querySelector('.sub-url-input').value.trim();
-    const type = row.querySelector('.sub-type-select').value;
-    const langCode = row.querySelector('.sub-lang-select').value;
-    const label = LANG_PRESETS.find(l => l.code === langCode)?.label || langCode;
-    if (url) tracks.push({ label, type, url });
-  });
-  return tracks;
-}
+addSubtitle();
 
-function updateDefaultSubOptions() {
-  const sel = document.getElementById('inp-default-sub');
-  const prev = sel.value;
-  const tracks = getSubTracks();
-  sel.innerHTML = '<option value="">Sin subtítulos por defecto</option>' +
-    tracks.map(t => `<option value="${t.label}" ${prev===t.label?'selected':''}>${t.label} (${t.type.toUpperCase()})</option>`).join('');
-}
+function generatePlayer(){
 
-function handleGenerate() {
-  const videoUrl = document.getElementById('inp-video').value.trim();
-  if (!videoUrl) { showInputError('inp-video', 'Ingresa la URL del video (.m3u8, .mp4 o Google Drive)'); return; }
+  const type = document.getElementById('type').value;
+  const id = document.getElementById('id').value.trim();
 
-  const title      = document.getElementById('inp-title').value.trim();
-  const tracks     = getSubTracks();
-  const defaultSub = document.getElementById('inp-default-sub').value;
-
-  const introStart  = document.getElementById('inp-intro-start').value.trim();
-  const introEnd    = document.getElementById('inp-intro-end').value.trim();
-  const endingStart = document.getElementById('inp-ending-start').value.trim();
-  const endingEnd   = document.getElementById('inp-ending-end').value.trim();
-
-  const base = window.location.origin + window.location.pathname;
-  const qp   = new URLSearchParams({ video: videoUrl });
-  if (title)      qp.set('title', title);
-  if (tracks.length > 0) {
-    const subsParam = tracks.map(t =>
-      `${encodeURIComponent(t.label)}:${t.type}:${encodeURIComponent(t.url)}`
-    ).join('|');
-    qp.set('subs', subsParam);
-  }
-  if (defaultSub)  qp.set('defaultSub', defaultSub);
-
-  // Marcadores: solo incluir si ambos extremos tienen valor
-  if (introStart && introEnd)    { qp.set('introStart', introStart);  qp.set('introEnd', introEnd); }
-  if (endingStart && endingEnd)  { qp.set('endingStart', endingStart); qp.set('endingEnd', endingEnd); }
-
-  const playerUrl  = `${base}?${qp.toString()}`;
-  const iframeCode = `<iframe src="${playerUrl}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" style="aspect-ratio:16/9;border:none;border-radius:8px;"></iframe>`;
-
-  document.getElementById('url-code').textContent    = playerUrl;
-  document.getElementById('iframe-code').textContent = iframeCode;
-
-  // Mostrar badge de tipo detectado
-  const detected   = detectVideoType(videoUrl);
-  const typeBadge  = { drive: '🔵 Google Drive', mp4: '🟢 MP4 Directo', hls: '🔴 HLS Stream' }[detected.type] || '';
-  const dividerEl  = document.querySelector('#output-section .divider');
-  if (dividerEl) dividerEl.textContent = `Resultado — ${typeBadge}`;
-
-  const out = document.getElementById('output-section');
-  out.classList.add('visible');
-  renderInlinePreview(playerUrl);
-  setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-}
-
-function showInputError(id, msg) {
-  const el = document.getElementById(id);
-  el.style.borderColor = 'var(--accent)';
-  el.style.boxShadow   = '0 0 0 3px var(--glow)';
-  el.placeholder = msg;
-  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; el.placeholder = 'HLS .m3u8 · MP4 directo · URL de Google Drive'; }, 2500);
-}
-
-function renderInlinePreview(playerUrl) {
-  const wrap = document.getElementById('preview-wrap');
-  wrap.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.src = playerUrl;
-  iframe.setAttribute('frameborder', '0');
-  iframe.setAttribute('allowfullscreen', '');
-  iframe.setAttribute('allow', 'autoplay; fullscreen');
-  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;';
-  wrap.appendChild(iframe);
-}
-
-/* ── DETECCIÓN DE TIPO DE VIDEO ── */
-function detectVideoType(url) {
-  // Ya es una URL directa de la API de Drive (alt=media)
-  if (/googleapis\.com\/drive\/v\d\/files\//.test(url) && url.includes('alt=media')) {
-    return { type: 'mp4', directUrl: url };
-  }
-  // Google Drive: URL normal → extraer ID para convertir a directa
-  const drivePatterns = [
-    /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
-    /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
-    /drive\.google\.com\/uc\?(?:.*&)?id=([a-zA-Z0-9_-]+)/,
-    /docs\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
-  ];
-  for (const re of drivePatterns) {
-    const m = url.match(re);
-    if (m) return { type: 'drive', id: m[1] };
-  }
-  // MP4 / WebM / OGV directo
-  if (/\.(mp4|webm|ogv)(\?.*)?$/i.test(url)) return { type: 'mp4', directUrl: url };
-  // HLS por defecto
-  return { type: 'hls' };
-}
-
-/**
- * Convierte una URL de Drive normal en la URL de reproducción directa.
- * El usuario debe pegar una API key de Google válida para que funcione,
- * o bien pegar directamente la googleapis URL con su propia key.
- *
- * Formato resultante:
- *   https://www.googleapis.com/drive/v3/files/{ID}?alt=media&key={API_KEY}
- *
- * Si no hay API key configurada, avisa al usuario con un mensaje claro.
- */
-const DRIVE_API_KEY = 'AIzaSyAkI6DhNMoRybfWzxUPSTJhkUl_PmR7wSo';
-
-function driveIdToDirectUrl(id) {
-  if (DRIVE_API_KEY) {
-    return `https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${DRIVE_API_KEY}`;
-  }
-  // Sin API key: intentar con el parámetro uc (funciona para archivos públicos pequeños, limitado)
-  return `https://drive.google.com/uc?export=download&id=${id}`;
-}
-
-/* ── 3. MODO REPRODUCTOR ── */
-function initPlayer(videoUrl, tracks, defaultSub, title, markers) {
-  document.getElementById('player-view').classList.add('active');
-  document.getElementById('player-title-bar').textContent = title || '';
-
-  const video    = document.getElementById('main-video');
-  const detected = detectVideoType(videoUrl);
-  showSpinner(true);
-
-  // ── Google Drive: convertir URL normal → URL directa de reproducción ──
-  if (detected.type === 'drive') {
-    const directUrl = driveIdToDirectUrl(detected.id);
-    // Tratar como MP4 directo con la URL convertida
-    video.src = directUrl;
-    video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
-    // Continuar con el flujo MP4 normal (controles propios, subtítulos, etc.)
-    detected.type = 'mp4';
+  if(!id){
+    alert('Ingresa un IMDB o TMDB ID');
+    return;
   }
 
-  // ── MP4 directo (incluye Drive convertido) ──
-  let hlsInstance = null;
-  if (detected.type === 'mp4') {
-    if (!video.src) {
-      video.src = detected.directUrl || videoUrl;
-      video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
-    }
-  } else {
-    // ── HLS ──
-    hlsInstance = loadHLS(video, videoUrl);
+  let url = '';
+
+  if(type === 'movie'){
+
+    url = `https://vaplayer.ru/embed/movie/${id}`;
+
+  }else{
+
+    const season = document.getElementById('season').value || 1;
+    const episode = document.getElementById('episode').value || 1;
+
+    url = `https://vaplayer.ru/embed/tv/${id}/${season}/${episode}`;
+
   }
 
-  video.addEventListener('playing', () => showSpinner(false));
-  video.addEventListener('waiting', () => showSpinner(true));
-  video.addEventListener('canplay', () => showSpinner(false));
-  video.addEventListener('error',   () => showError('Error al cargar el video. Verifica la URL y los permisos CORS.'));
+  const params = new URLSearchParams();
 
-  initControls(video);
-  setupSubtitles(video, tracks, defaultSub, hlsInstance);
-  setupControlsAutoHide();
-  setupTitleAutoHide(document.getElementById('player-title-bar'));
+  const title = document.getElementById('title').value.trim();
+  const poster = document.getElementById('poster').value.trim();
+  const color = document.getElementById('color').value;
 
-  if (markers) setupMarkers(video, markers);
-}
-
-/* ── MARCADORES (Skip Intro / Skip Ending) ── */
-function parseMmSs(str) {
-  if (!str) return null;
-  str = str.trim();
-  const parts = str.split(':').map(Number);
-  if (parts.some(isNaN)) return null;
-  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
-  if (parts.length === 2) return parts[0]*60 + parts[1];
-  return parts[0];
-}
-
-function setupMarkers(video, markers) {
-  const introStart  = parseMmSs(markers.introStart);
-  const introEnd    = parseMmSs(markers.introEnd);
-  const endingStart = parseMmSs(markers.endingStart);
-  const endingEnd   = parseMmSs(markers.endingEnd);
-
-  const btnIntro  = document.getElementById('btn-skip-intro');
-  const btnEnding = document.getElementById('btn-skip-ending');
-
-  const hasIntro  = introStart !== null && introEnd !== null;
-  const hasEnding = endingStart !== null && endingEnd !== null;
-
-  if (!hasIntro && !hasEnding) return;
-
-  btnIntro.addEventListener('click',  () => { video.currentTime = introEnd;  btnIntro.classList.remove('visible'); });
-  btnEnding.addEventListener('click', () => { video.currentTime = endingEnd; btnEnding.classList.remove('visible'); });
-
-  video.addEventListener('timeupdate', () => {
-    const t = video.currentTime;
-
-    if (hasIntro) {
-      const inIntro = t >= introStart && t < introEnd;
-      btnIntro.classList.toggle('visible', inIntro);
-    }
-    if (hasEnding) {
-      const inEnding = t >= endingStart && t < endingEnd;
-      btnEnding.classList.toggle('visible', inEnding);
-    }
-  });
-}
-
-/* ── 4. HLS.JS ── */
-function loadHLS(video, url) {
-  if (Hls.isSupported()) {
-    const hls = new Hls({
-      enableWorker: true,
-      lowLatencyMode: false,
-      xhrSetup: xhr => { xhr.withCredentials = false; },
-    });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-      video.play().catch(() => {});
-      // Configurar selector de calidad
-      setupQualityMenu(hls, data.levels);
-    });
-    hls.on(Hls.Events.ERROR, (_, data) => {
-      if (data.fatal) showError(`Error HLS: ${data.type}`);
-    });
-    return hls;
-  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = url;
-    video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
-    return null;
-  } else {
-    showError('Tu navegador no soporta reproducción HLS.');
-    return null;
+  if(title){
+    params.set('title', title);
   }
-}
 
-/* ── SELECTOR DE CALIDAD ── */
-function setupQualityMenu(hls, levels) {
-  const menu   = document.getElementById('quality-menu');
-  const btnQ   = document.getElementById('btn-quality');
+  if(poster){
+    params.set('poster', poster);
+  }
 
-  if (!levels || levels.length <= 1) return; // no hay nada que elegir
+  if(color){
+    params.set('primaryColor', color);
+  }
 
-  btnQ.style.display = '';
+  const subs = document.querySelectorAll('.subtitle-item');
 
-  const items = [{ id: -1, label: 'Auto', bitrate: null }];
-  levels.forEach((lvl, i) => {
-    const h = lvl.height || '';
-    const bw = lvl.bitrate ? `${Math.round(lvl.bitrate/1000)}k` : '';
-    const label = h ? `${h}p` : `Nivel ${i+1}`;
-    items.push({ id: i, label, bitrate: bw });
-  });
+  subs.forEach((sub, index) => {
 
-  // Orden: Auto primero, luego de mayor a menor resolución
-  menu.innerHTML = '<div class="sub-menu-title">Calidad</div>';
-  items.forEach(item => {
-    const div = document.createElement('div');
-    div.className  = 'quality-item' + (item.id === -1 ? ' active' : '');
-    div.dataset.id = item.id;
-    div.innerHTML  = `<span class="dot"></span>${item.label}${item.bitrate ? `<span class="quality-badge">${item.bitrate}</span>` : ''}`;
-    div.addEventListener('click', e => {
-      e.stopPropagation();
-      hls.currentLevel = item.id;
-      menu.querySelectorAll('.quality-item').forEach(el => el.classList.toggle('active', el.dataset.id == item.id));
-      menu.classList.remove('open');
-    });
-    menu.appendChild(div);
-  });
+    const label = sub.querySelector('.sub-label').value.trim();
+    const subUrl = sub.querySelector('.sub-url').value.trim();
+    const lang = sub.querySelector('.sub-lang').value.trim();
 
-  btnQ.addEventListener('click', e => {
-    e.stopPropagation();
-    menu.classList.toggle('open');
-    document.getElementById('sub-menu').classList.remove('open');
-    document.getElementById('sub-style-panel').classList.remove('open');
-  });
-  document.addEventListener('click', () => menu.classList.remove('open'));
-}
+    if(subUrl){
 
-/* ── 5. SUBTÍTULOS ── */
-const SubState = { current: null, octopus: null };
+      params.append('sub_url', subUrl);
 
-// tracks: [{ label, type:'vtt'|'ass', url }]
-function setupSubtitles(video, tracks, defaultSub, hlsInstance) {
-  const subMenu = document.getElementById('sub-menu');
-  // items: [{ id, label, type, url }]
-  const items = [{ id: 'off', label: 'Sin subtítulos', type: 'off', url: '' }];
-
-  // Pistas externas pasadas como parámetro
-  tracks.forEach((t, i) => {
-    const tid = `ext:${i}`;
-    if (t.type === 'vtt') {
-      addVttTrack(video, t.url, tid, t.label);
-    }
-    items.push({ id: tid, label: t.label, type: t.type, url: t.url });
-  });
-
-  // Pistas embebidas en el .m3u8
-  if (hlsInstance) {
-    const applyHlsSubs = () => {
-      const hlsTracks = hlsInstance.subtitleTracks || [];
-      hlsTracks.forEach((t, i) => {
-        const label = t.name || t.lang || `Pista ${i + 1}`;
-        items.push({ id: `hls:${i}`, label: `${label} (M3U8)`, type: 'hls', url: '' });
-      });
-      if (hlsTracks.length > 0) {
-        buildSubMenu(subMenu, items, video, hlsInstance, defaultSub);
-        document.getElementById('btn-subs').style.display = '';
-        document.getElementById('btn-sub-style').style.display = '';
+      if(label){
+        params.append('sub_label', label);
       }
-    };
-    if ((hlsInstance.subtitleTracks || []).length > 0) {
-      applyHlsSubs();
-    } else {
-      hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, applyHlsSubs);
-    }
-  }
 
-  buildSubMenu(subMenu, items, video, hlsInstance, defaultSub);
-
-  const hasSubs = tracks.length > 0;
-  document.getElementById('btn-subs').style.display      = hasSubs ? '' : 'none';
-  document.getElementById('btn-sub-style').style.display = hasSubs ? '' : 'none';
-
-  // Activar por defecto automáticamente
-  if (defaultSub) {
-    const defItem = items.find(it => it.label === defaultSub);
-    if (defItem) {
-      // Pequeño delay para que el video cargue primero
-      setTimeout(() => {
-        selectSubtitle(defItem.id, video, items, subMenu, hlsInstance);
-      }, 800);
-    }
-  } else if (tracks.length > 0) {
-    // Si no hay defaultSub explícito, activar el primer sub VTT español automáticamente
-    const autoSub = items.find(it =>
-      it.type === 'vtt' && /espa|español|spanish|es[^a-z]/i.test(it.label)
-    );
-    if (autoSub) {
-      setTimeout(() => {
-        selectSubtitle(autoSub.id, video, items, subMenu, hlsInstance);
-      }, 800);
-    }
-  }
-}
-
-function addVttTrack(video, src, id, label) {
-  [...video.querySelectorAll('track')].forEach(t => { if (t.dataset.tid === id) t.remove(); });
-  const track = document.createElement('track');
-  track.kind    = 'subtitles';
-  track.src     = src;
-  track.srclang = 'und';
-  track.label   = label;
-  track.dataset.tid = id;
-  track.setAttribute('crossorigin', 'anonymous');
-  track.default = false;
-  video.appendChild(track);
-}
-
-function buildSubMenu(menu, items, video, hlsInstance, defaultSub) {
-  menu.innerHTML = '<div class="sub-menu-title">Subtítulos</div>';
-  items.forEach(item => {
-    const div = document.createElement('div');
-    div.className  = 'sub-item' + (item.id === 'off' ? ' active' : '');
-    div.dataset.id = item.id;
-    // Badge de tipo para pistas externas
-    const badge = item.type !== 'off' && item.type !== 'hls'
-      ? `<span style="margin-left:auto;font-size:10px;opacity:.5;font-weight:600;">${item.type.toUpperCase()}</span>`
-      : '';
-    div.innerHTML  = `<span class="dot"></span>${item.label}${badge}`;
-    div.addEventListener('click', e => {
-      e.stopPropagation();
-      selectSubtitle(item.id, video, items, menu, hlsInstance);
-    });
-    menu.appendChild(div);
-  });
-}
-
-function selectSubtitle(id, video, items, menu, hlsInstance) {
-  menu.querySelectorAll('.sub-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.id === id);
-  });
-  disableAllSubs(video, hlsInstance);
-  SubState.current = id;
-
-  const item = items.find(it => it.id === id);
-  if (!item || id === 'off') return;
-
-  if (item.type === 'vtt') {
-    enableVttSub(video, id);
-  } else if (item.type === 'ass') {
-    enableAssSub(video, item.url);
-  } else if (id.startsWith('hls:')) {
-    const idx = parseInt(id.split(':')[1], 10);
-    if (hlsInstance) hlsInstance.subtitleTrack = idx;
-  }
-
-  menu.classList.remove('open');
-}
-
-function disableAllSubs(video, hlsInstance) {
-  for (const track of video.textTracks) track.mode = 'disabled';
-  if (hlsInstance) hlsInstance.subtitleTrack = -1;
-  if (SubState.octopus) {
-    try { SubState.octopus.freeTrack(); } catch(e) {}
-    SubState.octopus = null;
-  }
-  const wrap = document.getElementById('octopus-wrap');
-  wrap.innerHTML = '';
-}
-
-function enableVttSub(video, tid) {
-  for (const track of video.textTracks) {
-    // Activar solo el track con el data-tid correcto
-    const el = [...video.querySelectorAll('track')].find(t => t.dataset.tid === tid);
-    if (el && track.label === el.label) {
-      track.mode = 'showing';
-    }
-  }
-}
-
-/* Los Web Workers NO pueden cargarse cross-origin directamente.
-   Solución: hacer fetch del worker JS y crear un Blob URL local
-   para que el browser lo considere same-origin. */
-
-const CDN_BASE = 'https://cdn.jsdelivr.net/npm/javascript-subtitles-octopus@5.1.1/dist/';
-const OctopusWorkerCache = { url: null, legacyUrl: null };
-
-async function fetchWorkerBlobUrl(src) {
-  try {
-    const res  = await fetch(src);
-    const text = await res.text();
-    const blob = new Blob([text], { type: 'application/javascript' });
-    return URL.createObjectURL(blob);
-  } catch (e) {
-    console.warn('[ASS] No se pudo crear Blob URL para worker:', e);
-    return src; // fallback al URL original (puede fallar)
-  }
-}
-
-async function enableAssSub(video, assUrl) {
-  // 1. Cargar el script principal de SubtitlesOctopus si aún no está
-  if (typeof SubtitlesOctopus === 'undefined') {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = CDN_BASE + 'subtitles-octopus.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  // 2. Preparar Blob URLs para los workers (solo la primera vez)
-  if (!OctopusWorkerCache.url) {
-    [OctopusWorkerCache.url, OctopusWorkerCache.legacyUrl] = await Promise.all([
-      fetchWorkerBlobUrl(CDN_BASE + 'subtitles-octopus-worker.js'),
-      fetchWorkerBlobUrl(CDN_BASE + 'subtitles-octopus-worker-legacy.js'),
-    ]);
-  }
-
-  createOctopusInstance(video, assUrl);
-}
-
-function createOctopusInstance(video, assUrl) {
-  const wrap = document.getElementById('octopus-wrap');
-  wrap.innerHTML = '';
-  const canvas = document.createElement('canvas');
-  wrap.appendChild(canvas);
-  try {
-    SubState.octopus = new SubtitlesOctopus({
-      video,
-      subUrl:          assUrl,
-      canvas,
-      fonts:           [],
-      workerUrl:       OctopusWorkerCache.url       || (CDN_BASE + 'subtitles-octopus-worker.js'),
-      legacyWorkerUrl: OctopusWorkerCache.legacyUrl || (CDN_BASE + 'subtitles-octopus-worker-legacy.js'),
-      renderMode: 'wasm',
-      onReady: () => console.log('[ASS] SubtitlesOctopus listo'),
-      onError: (e) => console.warn('[ASS] Error:', e),
-    });
-  } catch (err) {
-    console.warn('[ASS] Error iniciando SubtitlesOctopus:', err);
-  }
-}
-
-/* ── 6. CONTROLES ── */
-function initControls(video) {
-  const btnPlay       = document.getElementById('btn-play');
-  const btnMute       = document.getElementById('btn-mute');
-  const btnFs         = document.getElementById('btn-fs');
-  const btnSubs       = document.getElementById('btn-subs');
-  const volSlider     = document.getElementById('vol-slider');
-  const progressWrap  = document.getElementById('progress-wrap');
-  const progressFill  = document.getElementById('progress-fill');
-  const progressThumb = document.getElementById('progress-thumb');
-  const timeCurrent   = document.getElementById('time-current');
-  const timeTotal     = document.getElementById('time-total');
-  const timeTooltip   = document.getElementById('time-tooltip');
-  const subMenu       = document.getElementById('sub-menu');
-  const playerView    = document.getElementById('player-view');
-
-  /* Play / Pause */
-  function togglePlay() { video.paused ? video.play() : video.pause(); }
-  function setPlayIcon(playing) {
-    document.getElementById('icon-play').style.display  = playing ? 'none' : '';
-    document.getElementById('icon-pause').style.display = playing ? '' : 'none';
-  }
-  btnPlay.addEventListener('click', e => { e.stopPropagation(); togglePlay(); });
-  video.addEventListener('click', togglePlay);
-  video.addEventListener('play',  () => setPlayIcon(true));
-  video.addEventListener('pause', () => setPlayIcon(false));
-
-  /* Volumen */
-  volSlider.addEventListener('input', () => {
-    video.volume = parseFloat(volSlider.value);
-    video.muted  = video.volume === 0;
-    updateMuteIcon();
-  });
-  btnMute.addEventListener('click', () => {
-    video.muted = !video.muted;
-    if (!video.muted && video.volume === 0) video.volume = 0.5;
-    volSlider.value = video.muted ? 0 : video.volume;
-    updateMuteIcon();
-  });
-  function updateMuteIcon() {
-    const m = video.muted || video.volume === 0;
-    document.getElementById('icon-vol').style.display  = m ? 'none' : '';
-    document.getElementById('icon-mute').style.display = m ? '' : 'none';
-  }
-
-  /* Progreso */
-  video.addEventListener('timeupdate', () => {
-    if (!video.duration) return;
-    const pct = (video.currentTime / video.duration) * 100;
-    progressFill.style.width = pct + '%';
-    progressThumb.style.left = pct + '%';
-    timeCurrent.textContent  = formatTime(video.currentTime);
-  });
-  video.addEventListener('loadedmetadata', () => {
-    timeTotal.textContent = formatTime(video.duration);
-  });
-
-  let isDragging = false;
-  function seekFromX(clientX) {
-    const rect = progressWrap.getBoundingClientRect();
-    const pct  = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    if (video.duration) video.currentTime = pct * video.duration;
-    progressFill.style.width = (pct * 100) + '%';
-    progressThumb.style.left = (pct * 100) + '%';
-  }
-  progressWrap.addEventListener('mousedown', e => { e.stopPropagation(); isDragging = true; seekFromX(e.clientX); });
-  document.addEventListener('mousemove', e => { if (isDragging) seekFromX(e.clientX); });
-  document.addEventListener('mouseup',   () => { isDragging = false; });
-
-  progressWrap.addEventListener('mousemove', e => {
-    if (!video.duration) return;
-    const rect = progressWrap.getBoundingClientRect();
-    const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    timeTooltip.style.display = 'block';
-    timeTooltip.style.left    = (pct * 100) + '%';
-    timeTooltip.textContent   = formatTime(pct * video.duration);
-  });
-  progressWrap.addEventListener('mouseleave', () => { timeTooltip.style.display = 'none'; });
-
-  // Touch seek
-  progressWrap.addEventListener('touchstart', e => { isDragging = true; seekFromX(e.touches[0].clientX); }, { passive: true });
-  document.addEventListener('touchmove', e => { if (isDragging) seekFromX(e.touches[0].clientX); }, { passive: true });
-  document.addEventListener('touchend', () => { isDragging = false; });
-
-  /* Fullscreen */
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      (playerView.requestFullscreen || playerView.webkitRequestFullscreen).call(playerView);
-    } else {
-      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-    }
-  }
-  btnFs.addEventListener('click', e => { e.stopPropagation(); toggleFullscreen(); });
-  video.addEventListener('dblclick', toggleFullscreen);
-  function updateFsIcon() {
-    const fs = !!document.fullscreenElement;
-    document.getElementById('icon-fs').style.display      = fs ? 'none' : '';
-    document.getElementById('icon-exit-fs').style.display = fs ? '' : 'none';
-  }
-  document.addEventListener('fullscreenchange', updateFsIcon);
-  document.addEventListener('webkitfullscreenchange', updateFsIcon);
-
-  /* Menú de subs */
-  btnSubs.addEventListener('click', e => {
-    e.stopPropagation();
-    subMenu.classList.toggle('open');
-    document.getElementById('quality-menu').classList.remove('open');
-    document.getElementById('sub-style-panel').classList.remove('open');
-  });
-  document.addEventListener('click', () => subMenu.classList.remove('open'));
-
-  /* Botón estilos de subtítulos */
-  const btnSubStyle = document.getElementById('btn-sub-style');
-  const subStylePanel = document.getElementById('sub-style-panel');
-  btnSubStyle.addEventListener('click', e => {
-    e.stopPropagation();
-    subStylePanel.classList.toggle('open');
-    subMenu.classList.remove('open');
-    document.getElementById('quality-menu').classList.remove('open');
-  });
-  subStylePanel.addEventListener('click', e => e.stopPropagation());
-  document.getElementById('btn-close-ssp').addEventListener('click', () => subStylePanel.classList.remove('open'));
-
-  /* Inicializar estilos de subtítulos */
-  initSubtitleStyles();
-
-  /* Teclado */
-  document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
-    if (e.code === 'Space')      { e.preventDefault(); togglePlay(); }
-    if (e.code === 'ArrowRight') { video.currentTime = Math.min(video.duration||0, video.currentTime + 10); }
-    if (e.code === 'ArrowLeft')  { video.currentTime = Math.max(0, video.currentTime - 10); }
-    if (e.code === 'ArrowUp')    { video.volume = Math.min(1, video.volume + .1); volSlider.value = video.volume; updateMuteIcon(); }
-    if (e.code === 'ArrowDown')  { video.volume = Math.max(0, video.volume - .1); volSlider.value = video.volume; updateMuteIcon(); }
-    if (e.code === 'KeyF')       { toggleFullscreen(); }
-    if (e.code === 'KeyM')       { btnMute.click(); }
-  });
-}
-
-/* ── Auto-ocultar controles ── */
-function setupControlsAutoHide() {
-  const controls = document.getElementById('controls');
-  const player   = document.getElementById('player-view');
-  let timer;
-  let mouseInControls = false;
-
-  function show() {
-    controls.classList.remove('hidden');
-    player.style.cursor = '';
-    clearTimeout(timer);
-    // No ocultar si el ratón está sobre los controles o el menú abierto
-    if (!mouseInControls) {
-      timer = setTimeout(hide, 3000);
-    }
-  }
-  function hide() {
-    if (mouseInControls) return;
-    controls.classList.add('hidden');
-    player.style.cursor = 'none';
-  }
-
-  player.addEventListener('mousemove', show);
-  player.addEventListener('touchstart', show, { passive: true });
-  player.addEventListener('mouseleave', () => { clearTimeout(timer); hide(); });
-
-  // Mantener visibles si el cursor está sobre los controles
-  controls.addEventListener('mouseenter', () => { mouseInControls = true; clearTimeout(timer); controls.classList.remove('hidden'); player.style.cursor = ''; });
-  controls.addEventListener('mouseleave', () => { mouseInControls = false; clearTimeout(timer); timer = setTimeout(hide, 3000); });
-
-  // Pausa → mostrar controles permanentemente hasta que se reanude
-  const video = document.getElementById('main-video');
-  video.addEventListener('pause', () => { clearTimeout(timer); controls.classList.remove('hidden'); player.style.cursor = ''; });
-  video.addEventListener('play',  () => { timer = setTimeout(hide, 3000); });
-
-  show();
-}
-
-function setupTitleAutoHide(titleBar) {
-  const controls = document.getElementById('controls');
-  const obs = new MutationObserver(() => {
-    titleBar.style.opacity = controls.classList.contains('hidden') ? '0' : '1';
-  });
-  obs.observe(controls, { attributes: true, attributeFilter: ['class'] });
-}
-
-/* ── ESTILOS DE SUBTÍTULOS ── */
-function initSubtitleStyles() {
-  const colorPicker     = document.getElementById('ssp-color');
-  const sizSlider       = document.getElementById('ssp-size');
-  const bgOpacSlider    = document.getElementById('ssp-bg-opacity');
-  const bgColorPicker   = document.getElementById('ssp-bg-color');
-  const shadowSlider    = document.getElementById('ssp-shadow');
-  const textOpacSlider  = document.getElementById('ssp-text-opacity');
-  const posSlider       = document.getElementById('ssp-position');
-  const preview         = document.getElementById('ssp-preview-text');
-
-  function hexToRgb(hex) {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `${r},${g},${b}`;
-  }
-
-  function posLabel(v) {
-    if (v <= 15)  return 'arriba del todo';
-    if (v <= 35)  return 'arriba';
-    if (v <= 55)  return 'centro';
-    if (v <= 75)  return 'abajo';
-    return 'abajo del todo';
-  }
-
-  function apply() {
-    const color      = colorPicker.value;
-    const size       = sizSlider.value;
-    const bgOpac     = (bgOpacSlider.value / 100).toFixed(2);
-    const bgColor    = bgColorPicker.value;
-    const shadow     = shadowSlider.value / 100;
-    const textOpac   = (textOpacSlider.value / 100).toFixed(2);
-    const pos        = parseInt(posSlider.value, 10); // 0=top … 100=bottom
-
-    // Update labels
-    document.getElementById('lbl-color').textContent       = color;
-    document.getElementById('lbl-size').textContent        = size + '%';
-    document.getElementById('lbl-bg-opacity').textContent  = bgOpacSlider.value + '%';
-    document.getElementById('lbl-bg-color').textContent    = bgColor;
-    document.getElementById('lbl-shadow').textContent      = shadowSlider.value + '%';
-    document.getElementById('lbl-text-opacity').textContent= textOpacSlider.value + '%';
-    document.getElementById('lbl-position').textContent    = posLabel(pos);
-
-    const bgRgb = hexToRgb(bgColor);
-    const colorRgb = hexToRgb(color);
-
-    // Build CSS cue style
-    const shadowPx = Math.round(shadow * 6);
-    const shadowOpac = (shadow * 0.9).toFixed(2);
-    const shadowCss = shadowPx > 0
-      ? `${shadowPx}px ${shadowPx}px ${shadowPx*2}px rgba(0,0,0,${shadowOpac}), -1px -1px ${shadowPx}px rgba(0,0,0,${(shadow*0.5).toFixed(2)})`
-      : 'none';
-
-    // Posición: line% en WebVTT cue (0=top, 100=bottom)
-    // Inyectamos JS para modificar los cues activos en tiempo real
-    const styleId = 'sf-cue-style';
-    let styleEl = document.getElementById(styleId);
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = styleId;
-      document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = `
-      video::cue {
-        background: rgba(${bgRgb}, ${bgOpac}) !important;
-        color: rgba(${colorRgb}, ${textOpac}) !important;
-        font-size: ${size}% !important;
-        text-shadow: ${shadowCss} !important;
-        border-radius: 4px;
-        padding: 2px 6px;
+      if(lang){
+        params.append('sub_lang', lang);
       }
-    `;
 
-    // Posición vertical: manipular todos los cues activos del textTrack
-    const video = document.getElementById('main-video');
-    if (video) {
-      for (const track of video.textTracks) {
-        if (track.mode !== 'showing') continue;
-        const cues = track.cues || [];
-        for (const cue of cues) {
-          // line: porcentaje desde arriba. 90% = abajo (por defecto), 10% = arriba
-          cue.line = pos;
-          cue.snapToLines = false;
-        }
-        // Guardar preferencia para cues que aún no han cargado
-        track._sfPositionPref = pos;
-      }
     }
 
-    // Guardar en variable global para aplicar a cues futuros
-    window._sfSubPosition = pos;
-
-    // Update preview
-    preview.style.color           = `rgba(${colorRgb}, ${textOpac})`;
-    preview.style.background      = `rgba(${bgRgb}, ${bgOpac})`;
-    preview.style.fontSize        = (size / 100 * 15) + 'px';
-    preview.style.textShadow      = shadowCss;
-    preview.style.padding         = '2px 8px';
-    preview.style.borderRadius    = '4px';
-    preview.style.display         = 'inline';
-  }
-
-  [colorPicker, sizSlider, bgOpacSlider, bgColorPicker, shadowSlider, textOpacSlider, posSlider]
-    .forEach(el => el.addEventListener('input', apply));
-
-  // Aplicar posición a cues cuando se agreguen nuevos
-  const video = document.getElementById('main-video');
-  if (video) {
-    video.addEventListener('loadedmetadata', () => {
-      for (const track of video.textTracks) {
-        track.addEventListener('cuechange', () => {
-          if (window._sfSubPosition === undefined) return;
-          const cues = track.activeCues || [];
-          for (const cue of cues) {
-            cue.line = window._sfSubPosition;
-            cue.snapToLines = false;
-          }
-        });
-      }
-    });
-  }
-
-  apply(); // estado inicial
-}
-
-
-function formatTime(sec) {
-  if (!isFinite(sec)) return '0:00';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-function showSpinner(show) {
-  document.getElementById('spinner').classList.toggle('active', show);
-}
-function showError(msg) {
-  showSpinner(false);
-  document.getElementById('error-msg').textContent = msg;
-  document.getElementById('player-error').classList.add('active');
-}
-function loadScript(src, cb) {
-  const s = document.createElement('script');
-  s.src    = src;
-  s.onload = cb;
-  s.onerror = () => console.warn('[loadScript] Error:', src);
-  document.head.appendChild(s);
-}
-function copyText(btnId, codeId) {
-  const text = document.getElementById(codeId).textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById(btnId);
-    btn.classList.add('copied');
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copiado`;
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar`;
-    }, 2500);
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
   });
+
+  if(params.toString()){
+    url += '?' + params.toString();
+  }
+
+  document.getElementById('preview').src = url;
+
+  document.getElementById('urlOutput').textContent = url;
+
+  document.getElementById('iframeOutput').textContent =
+`<iframe
+  src="${url}"
+  width="100%"
+  height="100%"
+  frameborder="0"
+  allowfullscreen
+  allow="autoplay; fullscreen">
+</iframe>`;
+
 }
+
+function copyText(id){
+
+  const text = document.getElementById(id).textContent;
+
+  navigator.clipboard.writeText(text);
+
+}
+
 </script>
+
 </body>
 </html>
